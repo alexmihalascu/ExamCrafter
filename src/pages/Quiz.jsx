@@ -16,6 +16,8 @@ const Quiz = () => {
   const [finished, setFinished] = useState(false);
   const [timer, setTimer] = useState(2700); // 45 minutes
   const [quizType, setQuizType] = useState('');
+  const [answerValidation, setAnswerValidation] = useState({});
+  const [answerSubmitted, setAnswerSubmitted] = useState(false);
 
   useEffect(() => {
     if (quizType) {
@@ -75,17 +77,21 @@ const Quiz = () => {
     setAnswers({ ...answers, [questionId]: answer });
   };
 
-  const handleNextQuestion = () => {
+  const handleSubmitAnswer = () => {
     const currentQuestion = questions[currentQuestionIndex];
-    if (!answers[currentQuestion.id]) {
-      alert('Te rog să selectezi un răspuns înainte de a continua.');
-      return;
-    }
-    if (answers[currentQuestion.id] === currentQuestion.varianta_corecta) {
+    const isCorrect = answers[currentQuestion.id] === currentQuestion.varianta_corecta;
+    setAnswerValidation({ ...answerValidation, [currentQuestion.id]: isCorrect });
+    setAnswerSubmitted(true);
+
+    if (isCorrect) {
       setScore(prevScore => prevScore + 1);
     } else {
       setIncorrectAnswers(prevIncorrect => prevIncorrect + 1);
     }
+  };
+
+  const handleNextQuestion = () => {
+    setAnswerSubmitted(false);
 
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
@@ -100,7 +106,7 @@ const Quiz = () => {
       try {
         const totalQuestions = questions.length;
         const passed = score >= totalQuestions / 2;
-        
+
         console.log('Salvarea rezultatelor pentru utilizator:', user.id);
         console.log('Tip grilă:', quizType);
         console.log('Răspunsuri corecte:', score);
@@ -134,6 +140,8 @@ const Quiz = () => {
     setFinished(false);
     setTimer(2700);
     setQuizType('');
+    setAnswerValidation({});
+    setAnswerSubmitted(false);
   };
 
   const calculateProgress = () => {
@@ -181,8 +189,8 @@ const Quiz = () => {
             </Paper>
           </Grid>
           <Grid item>
-          <Paper style={{ padding: '10px', backgroundColor: '#ffffff', borderRadius: '8px' }}>
-            <Typography variant="body1">Întrebări rămase: {questions.length - currentQuestionIndex - 1}</Typography>
+            <Paper style={{ padding: '10px', backgroundColor: '#ffffff', borderRadius: '8px' }}>
+              <Typography variant="body1">Întrebări rămase: {questions.length - currentQuestionIndex - 1}</Typography>
             </Paper>
           </Grid>
         </Grid>
@@ -193,16 +201,28 @@ const Quiz = () => {
               question={questions[currentQuestionIndex]}
               selectedAnswer={answers[questions[currentQuestionIndex].id] || ''}
               handleAnswerChange={(e) => handleAnswerChange(questions[currentQuestionIndex].id, e.target.value)}
+              answerValidation={answerValidation[questions[currentQuestionIndex].id]}
+              answerSubmitted={answerSubmitted}
             />
             <Box mt={4}>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleNextQuestion}
-                disabled={!answers[questions[currentQuestionIndex].id]}
-              >
-                {currentQuestionIndex < questions.length - 1 ? 'Următoarea' : 'Finalizează'}
-              </Button>
+              {!answerSubmitted ? (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSubmitAnswer}
+                  disabled={!answers[questions[currentQuestionIndex].id]}
+                >
+                  Trimite răspuns
+                </Button>
+              ) : (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleNextQuestion}
+                >
+                  {currentQuestionIndex < questions.length - 1 ? 'Următoarea' : 'Finalizează'}
+                </Button>
+              )}
             </Box>
           </div>
         ) : (
