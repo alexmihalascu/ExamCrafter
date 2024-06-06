@@ -3,6 +3,7 @@ import { AppBar, Toolbar, Typography, Button, IconButton, Menu, MenuItem, useMed
 import MenuIcon from '@mui/icons-material/Menu';
 import { useNavigate } from 'react-router-dom';
 import { useClerk } from '@clerk/clerk-react';
+import logo from '/android-chrome-192x192.png';
 
 const Navbar = () => {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -47,8 +48,11 @@ const Navbar = () => {
     <>
       <AppBar position="static" sx={{ borderRadius: 2, margin: '10px' }}>
         <Toolbar>
+          <IconButton edge="start" color="inherit" aria-label="menu" onClick={() => navigate('/main')}>
+            <img src={logo} alt="Quiz App Logo" style={{ width: 40, height: 40 }} />
+          </IconButton>
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Quiz App
+            ExamCrafter
           </Typography>
           {isMobile ? (
             <>
