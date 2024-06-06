@@ -158,7 +158,7 @@ const Quiz = () => {
   if (finished) {
     return (
       <Container maxWidth="md">
-        <Paper style={{ padding: '20px', textAlign: 'center' }}>
+        <Paper sx={{ padding: 3, textAlign: 'center' }}>
           <Typography variant="h5">Mulțumim pentru completarea chestionarului!</Typography>
           <Typography variant="h6">Scorul tău: {score} din {questions.length}</Typography>
           <Button variant="contained" color="primary" onClick={handleRestartQuiz}>
@@ -171,7 +171,7 @@ const Quiz = () => {
 
   return (
     <Container maxWidth="md">
-      <Paper style={{ padding: '20px', textAlign: 'center' }}>
+      <Paper sx={{ padding: 3, textAlign: 'center' }}>
         <Typography variant="h4">Chestionar LICENȚĂ URA</Typography>
         <Box mb={2}>
           <Typography variant="body1">Timp rămas: {Math.floor(timer / 60)}:{timer % 60}</Typography>
@@ -179,17 +179,17 @@ const Quiz = () => {
         <LinearProgress variant="determinate" value={calculateProgress()} />
         <Grid container spacing={2} justifyContent="center">
           <Grid item>
-            <Paper style={{ padding: '10px', backgroundColor: '#e0f7fa', borderRadius: '8px' }}>
+            <Paper sx={{ padding: 1, backgroundColor: 'success.light', borderRadius: 1 }}>
               <Typography variant="body1">Întrebări corecte: {score}</Typography>
             </Paper>
           </Grid>
           <Grid item>
-            <Paper style={{ padding: '10px', backgroundColor: '#ffebee', borderRadius: '8px' }}>
+            <Paper sx={{ padding: 1, backgroundColor: 'error.light', borderRadius: 1 }}>
               <Typography variant="body1">Întrebări greșite: {incorrectAnswers}</Typography>
             </Paper>
           </Grid>
           <Grid item>
-            <Paper style={{ padding: '10px', backgroundColor: '#ffffff', borderRadius: '8px' }}>
+            <Paper sx={{ padding: 1, backgroundColor: 'background.paper', borderRadius: 1 }}>
               <Typography variant="body1">Întrebări rămase: {questions.length - currentQuestionIndex - 1}</Typography>
             </Paper>
           </Grid>

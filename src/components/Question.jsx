@@ -1,20 +1,23 @@
 import React from 'react';
 import { Typography, Box, Radio, RadioGroup, FormControlLabel, FormControl, Paper } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 
 const Question = ({ question, handleAnswerChange, selectedAnswer, answerValidation, answerSubmitted }) => {
+  const theme = useTheme();
+
   const getColor = (option) => {
     if (!answerSubmitted) {
-      return '#fff'; // Default white background if answer is not submitted yet
+      return theme.palette.background.paper; // Background color from theme
     }
     if (selectedAnswer === option) {
       return answerValidation === true
-        ? '#c8e6c9' // Green for correct
-        : '#ffcdd2'; // Red for incorrect
+        ? theme.palette.success.light // Green for correct
+        : theme.palette.error.light; // Red for incorrect
     }
     if (answerValidation === false && question.varianta_corecta === option) {
-      return '#c8e6c9'; // Green for correct answer
+      return theme.palette.success.light; // Green for correct answer
     }
-    return '#fff'; // Default white background
+    return theme.palette.background.paper; // Background color from theme
   };
 
   return (
