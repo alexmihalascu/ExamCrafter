@@ -54,6 +54,7 @@
     "globals": "^15.3.0",
     "rollup": "^2.75.7",
     "vite": "^5.2.0",
+    "vite-plugin-pwa": "^0.20.0",
     "workbox-cli": "^7.1.0"
   },
   "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",

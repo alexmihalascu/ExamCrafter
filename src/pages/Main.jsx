@@ -5,6 +5,9 @@ import { supabase } from '../supabase/supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
 
+// Adăugați importul pentru service worker
+import { registerSW } from 'virtual:pwa-register';
+
 const Main = () => {
   const { user } = useUser();
   const navigate = useNavigate();
@@ -12,6 +15,18 @@ const Main = () => {
   const [imageSrc, setImageSrc] = useState('');
 
   useEffect(() => {
+    // Înregistrează service worker-ul
+    const updateSW = registerSW({
+      onNeedRefresh() {
+        if (window.confirm("New content is available. Do you want to refresh?")) {
+          updateSW(true);
+        }
+      },
+      onOfflineReady() {
+        console.log("The app is ready to work offline.");
+      },
+    });
+
     const fetchTestStats = async () => {
       if (user && user.id) {
         try {
