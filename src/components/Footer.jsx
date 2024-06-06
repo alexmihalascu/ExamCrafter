@@ -6,7 +6,7 @@ const Footer = () => {
     <Box sx={{ py: 3, px: 2, mt: 'auto', backgroundColor: (theme) => theme.palette.grey[200] }}>
       <Container maxWidth="lg">
         <Typography variant="body1" align="center">
-          Aplicație creeată cu 🫀 de către{' '}
+          Aplicație creată cu 🫀 de către{' '}
           <Link href="https://alexandrumihalascu.tech" target="_blank" rel="noopener noreferrer">
             Alexandru Mihalașcu
           </Link>.
