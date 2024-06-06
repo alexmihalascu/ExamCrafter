@@ -9,6 +9,7 @@ const Main = () => {
   const { user } = useUser();
   const navigate = useNavigate();
   const [testStats, setTestStats] = useState({ totalTests: 0, passedTests: 0 });
+  const [imageSrc, setImageSrc] = useState('');
 
   useEffect(() => {
     const fetchTestStats = async () => {
@@ -32,6 +33,16 @@ const Main = () => {
     };
 
     fetchTestStats();
+
+    // Set image URL with optimization parameters
+    if (user && user.imageUrl) {
+      const params = new URLSearchParams();
+      params.set('height', '200');
+      params.set('width', '200');
+      params.set('quality', '100');
+      params.set('fit', 'crop');
+      setImageSrc(`${user.imageUrl}?${params.toString()}`);
+    }
   }, [user]);
 
   const handleStartQuiz = () => {
@@ -42,14 +53,18 @@ const Main = () => {
     <Container maxWidth="lg">
       <Box sx={{ my: 4 }}>
         <Paper sx={{ padding: 3, borderRadius: 2, textAlign: 'center' }}>
-          <Avatar
-            alt={user.fullName}
-            src={user.profileImageUrl}
-            sx={{ width: 56, height: 56, margin: '0 auto', mb: 2 }}
-          />
-          <Typography variant="h4" component="h1" gutterBottom>
-            Bună, {user.firstName}! Bine ai venit la ExamCrafter!
-          </Typography>
+          {user && (
+            <>
+              <Avatar
+                alt={user.firstName + ' ' + user.lastName}
+                src={imageSrc}
+                sx={{ width: 56, height: 56, margin: '0 auto', mb: 2 }}
+              />
+              <Typography variant="h4" component="h1" gutterBottom>
+                Bună, {user.firstName}! Bine ai venit la ExamCrafter!
+              </Typography>
+            </>
+          )}
           <Typography variant="h6" component="p" gutterBottom>
             Ai efectuat {testStats.totalTests} teste, dintre care {testStats.passedTests} au fost promovate.
           </Typography>
@@ -61,7 +76,7 @@ const Main = () => {
           <Grid item xs={12} md={4}>
             <Paper sx={{ padding: 2, textAlign: 'center', borderRadius: 2 }}>
               <Typography variant="h6">Sistem de grile</Typography>
-              <Typography variant="body1">Aplicația foloseste de o baza de date cloud (Supabase) pentru a stoca întrebările.</Typography>
+              <Typography variant="body1">Aplicația folosește o bază de date cloud (Supabase) pentru a stoca întrebările.</Typography>
             </Paper>
           </Grid>
           <Grid item xs={12} md={4}>

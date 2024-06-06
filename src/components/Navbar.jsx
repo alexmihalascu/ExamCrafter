@@ -40,7 +40,8 @@ const Navbar = () => {
   const menuItems = [
     { text: 'Acasă', path: '/main' },
     { text: 'Istoric', path: '/history' },
-    { text: 'Chestionar', path: '/quiz' },
+    { text: 'Grile', path: '/quiz' },
+    { text: 'Setări cont', path: '/user' },
     { text: 'Deconectare', action: handleLogout }
   ];
 
