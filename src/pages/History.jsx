@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase/supabaseClient';
 import { useUser } from '@clerk/clerk-react';
-import { Typography, Paper, Card, CardContent, Grid, Container, Box } from '@mui/material';
+import {
+  Typography, Paper, Card, CardContent, Grid, Container, Box, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button
+} from '@mui/material';
 import Chart from 'react-apexcharts';
 
 const quizTypeMap = {
@@ -21,6 +23,8 @@ const quizTypeMap = {
 const History = () => {
   const { user } = useUser();
   const [history, setHistory] = useState([]);
+  const [selectedEntry, setSelectedEntry] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState('');
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -29,7 +33,8 @@ const History = () => {
           const { data, error } = await supabase
             .from('results')
             .select('*')
-            .eq('user_id', user.id);
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
 
           if (error) {
             throw error;
@@ -52,6 +57,29 @@ const History = () => {
   const passRate = totalTests > 0 ? (passedTests / totalTests) * 100 : 0;
   const averageCorrectAnswers = totalTests > 0 ? (correctAnswers / totalTests) : 0;
 
+  const categoriesCount = Object.keys(quizTypeMap).reduce((acc, key) => {
+    acc[key] = history.filter(entry => entry.quiz_type === key).length;
+    return acc;
+  }, {});
+
+  const categoriesChartOptions = {
+    chart: {
+      type: 'pie',
+      events: {
+        dataPointSelection: (event, chartContext, config) => {
+          const category = config.w.config.labels[config.dataPointIndex];
+          setSelectedCategory(category);
+        },
+      },
+    },
+    labels: Object.keys(categoriesCount).map(key => quizTypeMap[key]),
+    legend: {
+      show: false
+    },
+  };
+
+  const categoriesChartSeries = Object.values(categoriesCount);
+
   const pieChartOptions = {
     chart: {
       type: 'pie',
@@ -66,13 +94,13 @@ const History = () => {
       type: 'bar',
     },
     xaxis: {
-      categories: ['Număr Teste', 'Rata de Promovare'],
+      categories: ['Număr Teste', 'Teste Promovate'],
     },
   };
 
   const barChartSeries = [{
     name: 'Valori',
-    data: [totalTests, passRate],
+    data: [totalTests, passedTests],
   }];
 
   const averageChartOptions = {
@@ -89,19 +117,13 @@ const History = () => {
     data: [averageCorrectAnswers],
   }];
 
-  const passedChartOptions = {
-    chart: {
-      type: 'bar',
-    },
-    xaxis: {
-      categories: ['Numărul de Teste Trecute'],
-    },
+  const handleCardClick = (entry) => {
+    setSelectedEntry(entry);
   };
 
-  const passedChartSeries = [{
-    name: 'Trecute',
-    data: [passedTests],
-  }];
+  const handleCloseDialog = () => {
+    setSelectedEntry(null);
+  };
 
   return (
     <Container maxWidth="md">
@@ -113,28 +135,28 @@ const History = () => {
             <Typography variant="body1" align="center">Procentajul de răspunsuri corecte și greșite</Typography>
           </Grid>
           <Grid item xs={12} md={6}>
+            <Chart options={categoriesChartOptions} series={categoriesChartSeries} type="pie" width="85%" />
+            <Typography variant="body1" align="center">Categorii de teste efectuate</Typography>
+          </Grid>
+          <Grid item xs={12} md={6}>
             <Chart options={barChartOptions} series={barChartSeries} type="bar" width="100%" />
-            <Typography variant="body1" align="center">Numărul total de teste efectuate și rata de promovare</Typography>
+            <Typography variant="body1" align="center">Numărul total de teste efectuate și teste promovate</Typography>
           </Grid>
           <Grid item xs={12} md={6}>
             <Chart options={averageChartOptions} series={averageChartSeries} type="bar" width="100%" />
             <Typography variant="body1" align="center">Media răspunsurilor corecte</Typography>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Chart options={passedChartOptions} series={passedChartSeries} type="bar" width="100%" />
-            <Typography variant="body1" align="center">Numărul de teste trecute</Typography>
           </Grid>
         </Grid>
         <Box mt={4}>
           <Grid container spacing={3}>
             {history.map((entry, index) => (
               <Grid item xs={12} key={index}>
-                <Card>
+                <Card onClick={() => handleCardClick(entry)} style={{ cursor: 'pointer' }}>
                   <CardContent>
                     <Typography variant="h6">Tip Grilă: {quizTypeMap[entry.quiz_type]}</Typography>
                     <Typography>Răspunsuri corecte: {entry.correct_answers}</Typography>
                     <Typography>Admis: {entry.passed ? 'Da' : 'Nu'}</Typography>
-                    <Typography>Data: {new Date(entry.created_at).toLocaleString()}</Typography>
+                    <Typography>Data: {new Date(entry.created_at).toLocaleString('ro-RO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}</Typography>
                   </CardContent>
                 </Card>
               </Grid>
@@ -142,6 +164,45 @@ const History = () => {
           </Grid>
         </Box>
       </Paper>
+      <Dialog open={Boolean(selectedEntry)} onClose={handleCloseDialog}>
+        <DialogTitle>Detalii Test</DialogTitle>
+        <DialogContent>
+          {selectedEntry && (
+            <>
+              <DialogContentText>Tip Grilă: {quizTypeMap[selectedEntry.quiz_type]}</DialogContentText>
+              <DialogContentText>Răspunsuri corecte: {selectedEntry.correct_answers}</DialogContentText>
+              <DialogContentText>Admis: {selectedEntry.passed ? 'Da' : 'Nu'}</DialogContentText>
+              <DialogContentText>Data: {new Date(selectedEntry.created_at).toLocaleString('ro-RO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}</DialogContentText>
+              <Chart
+                options={{
+                  chart: { type: 'bar' },
+                  xaxis: { categories: ['Întrebări', 'Răspunsuri Corecte'] },
+                }}
+                series={[{
+                  name: 'Număr',
+                  data: [45, selectedEntry.correct_answers],
+                }]}
+                type="bar"
+                width="100%"
+              />
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">Închide</Button>
+        </DialogActions>
+      </Dialog>
+      {selectedCategory && (
+        <Dialog open={Boolean(selectedCategory)} onClose={() => setSelectedCategory('')}>
+          <DialogTitle>Detalii Categorie</DialogTitle>
+          <DialogContent>
+            <DialogContentText>{selectedCategory}</DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setSelectedCategory('')} color="primary">Închide</Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </Container>
   );
 };
