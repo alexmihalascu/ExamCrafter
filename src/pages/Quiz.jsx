@@ -252,7 +252,7 @@ const Quiz = () => {
           </Typography>
         </Box>
         <Box mb={2}>
-          <Typography variant="body1">Progres întrebare:</Typography>
+          <Typography variant="body1">Progres întrebări:</Typography>
           <LinearProgress variant="determinate" value={calculateQuestionProgress()} />
         </Box>
         <Grid container spacing={2} justifyContent="center">
