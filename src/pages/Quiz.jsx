@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase/supabaseClient';
 import { useUser } from '@clerk/clerk-react';
 import Question from '../components/Question';
-import { Button, CircularProgress, Typography, Box, Paper, Grid, Container, LinearProgress } from '@mui/material';
+import {
+  Button, CircularProgress, Typography, Box, Paper, Grid, Container, LinearProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle
+} from '@mui/material';
 import QuizSelection from '../components/QuizSelection';
 
 const Quiz = () => {
@@ -18,6 +20,29 @@ const Quiz = () => {
   const [quizType, setQuizType] = useState('');
   const [answerValidation, setAnswerValidation] = useState({});
   const [answerSubmitted, setAnswerSubmitted] = useState(false);
+  const [passed, setPassed] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
+
+  useEffect(() => {
+    const savedState = localStorage.getItem('quizState');
+    if (savedState) {
+      const state = JSON.parse(savedState);
+      setQuestions(state.questions);
+      setCurrentQuestionIndex(state.currentQuestionIndex);
+      setAnswers(state.answers);
+      setScore(state.score);
+      setIncorrectAnswers(state.incorrectAnswers);
+      setTimer(state.timer);
+      setQuizType(state.quizType);
+      setAnswerValidation(state.answerValidation);
+      setAnswerSubmitted(state.answerSubmitted);
+      setFinished(state.finished);
+      setPassed(state.passed);
+      setLoading(false);
+    } else {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (quizType) {
@@ -39,6 +64,25 @@ const Quiz = () => {
       handleFinishQuiz();
     }
   }, [timer]);
+
+  useEffect(() => {
+    if (!loading) {
+      const state = {
+        questions,
+        currentQuestionIndex,
+        answers,
+        score,
+        incorrectAnswers,
+        timer,
+        quizType,
+        answerValidation,
+        answerSubmitted,
+        finished,
+        passed,
+      };
+      localStorage.setItem('quizState', JSON.stringify(state));
+    }
+  }, [questions, currentQuestionIndex, answers, score, incorrectAnswers, timer, quizType, answerValidation, answerSubmitted, finished, passed, loading]);
 
   const fetchQuestions = async () => {
     try {
@@ -66,9 +110,9 @@ const Quiz = () => {
         throw error;
       }
       setQuestions(data);
+      setLoading(false);
     } catch (error) {
       console.error('Eroare la preluarea întrebărilor:', error);
-    } finally {
       setLoading(false);
     }
   };
@@ -102,16 +146,12 @@ const Quiz = () => {
 
   const handleFinishQuiz = async () => {
     setFinished(true);
+    localStorage.removeItem('quizState');
+    const totalQuestions = questions.length;
+    const passed = score >= totalQuestions / 2;
+    setPassed(passed);
     if (user) {
       try {
-        const totalQuestions = questions.length;
-        const passed = score >= totalQuestions / 2;
-
-        console.log('Salvarea rezultatelor pentru utilizator:', user.id);
-        console.log('Tip grilă:', quizType);
-        console.log('Răspunsuri corecte:', score);
-        console.log('Admis:', passed);
-
         const { data, error } = await supabase
           .from('results')
           .insert([
@@ -142,6 +182,21 @@ const Quiz = () => {
     setQuizType('');
     setAnswerValidation({});
     setAnswerSubmitted(false);
+    localStorage.removeItem('quizState');
+  };
+
+  const handleStartNewQuiz = (type) => {
+    if (questions.length > 0 && currentQuestionIndex < questions.length - 1) {
+      setShowDialog(true);
+    } else {
+      setQuizType(type);
+    }
+  };
+
+  const handleConfirmNewQuiz = (type) => {
+    setShowDialog(false);
+    handleRestartQuiz();
+    setQuizType(type);
   };
 
   const calculateProgress = () => {
@@ -149,18 +204,35 @@ const Quiz = () => {
     return ((totalTime - timer) / totalTime) * 100;
   };
 
-  if (quizType === '') {
-    return <QuizSelection onSelect={(type) => setQuizType(type)} />;
-  }
+  const calculateQuestionProgress = () => {
+    return ((currentQuestionIndex + 1) / questions.length) * 100;
+  };
+
+  const formatTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+  };
 
   if (loading) return <CircularProgress />;
+
+  if (quizType === '' && questions.length === 0) {
+    return <QuizSelection onSelect={handleStartNewQuiz} />;
+  }
 
   if (finished) {
     return (
       <Container maxWidth="md">
         <Paper sx={{ padding: 3, textAlign: 'center' }}>
-          <Typography variant="h5">Mulțumim pentru completarea chestionarului!</Typography>
-          <Typography variant="h6">Scorul tău: {score} din {questions.length}</Typography>
+          <Typography variant="h5">
+            Mulțumim pentru completarea chestionarului!
+          </Typography>
+          <Typography variant="h6">
+            Scorul tău: {score} din {questions.length}
+          </Typography>
+          <Typography variant="h6">
+            {passed ? 'Felicitări, ai trecut testul!' : 'Îmi pare rău, nu ai trecut testul.'}
+          </Typography>
           <Button variant="contained" color="primary" onClick={handleRestartQuiz}>
             Începe un nou chestionar
           </Button>
@@ -173,10 +245,16 @@ const Quiz = () => {
     <Container maxWidth="md">
       <Paper sx={{ padding: 3, textAlign: 'center' }}>
         <Typography variant="h4">Chestionar LICENȚĂ URA</Typography>
-        <Box mb={2}>
-          <Typography variant="body1">Timp rămas: {Math.floor(timer / 60)}:{timer % 60}</Typography>
+        <Box mb={2} display="flex" flexDirection="column" alignItems="center">
+          {/* <CircularProgress variant="determinate" value={calculateProgress()} /> */}
+          <Typography variant="caption" component="div" color="textSecondary" sx={{ mt: 1 }}>
+            Timp rămas: {formatTime(timer)}
+          </Typography>
         </Box>
-        <LinearProgress variant="determinate" value={calculateProgress()} />
+        <Box mb={2}>
+          <Typography variant="body1">Progres întrebare:</Typography>
+          <LinearProgress variant="determinate" value={calculateQuestionProgress()} />
+        </Box>
         <Grid container spacing={2} justifyContent="center">
           <Grid item>
             <Paper sx={{ padding: 1, backgroundColor: 'success.light', borderRadius: 1 }}>
@@ -229,6 +307,22 @@ const Quiz = () => {
           <Typography variant="h6">Nu există întrebări disponibile.</Typography>
         )}
       </Paper>
+      <Dialog open={showDialog} onClose={() => setShowDialog(false)}>
+        <DialogTitle>Avertisment</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Ești deja într-un test. Vrei să continui testul curent sau să începi un nou test?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowDialog(false)} color="primary">
+            Continuă testul curent
+          </Button>
+          <Button onClick={() => handleConfirmNewQuiz(quizType)} color="primary" autoFocus>
+            Începe un nou test
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

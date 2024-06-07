@@ -52,13 +52,13 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
       <AppBar position="static" sx={{ borderRadius: 2, margin: '10px' }}>
         <Toolbar>
           <IconButton edge="start" color="inherit" aria-label="menu" onClick={() => navigate('/main')}>
-            <img src={logo} alt="Quiz App Logo" style={{ width: 40, height: 40 }} />
+            <img src={logo} alt="ExamCrafter App Logo" style={{ width: 40, height: 40 }} />
           </IconButton>
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             ExamCrafter
           </Typography>
           <IconButton color="inherit" onClick={toggleDarkMode}>
-            {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+            {darkMode ? <Brightness4Icon />  : <Brightness7Icon /> }
           </IconButton>
           {isMobile ? (
             <>
