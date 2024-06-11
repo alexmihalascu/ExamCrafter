@@ -16,7 +16,7 @@ const Quiz = () => {
   const [score, setScore] = useState(0);
   const [incorrectAnswers, setIncorrectAnswers] = useState(0);
   const [finished, setFinished] = useState(false);
-  const [timer, setTimer] = useState(2700); // 45 minutes
+  const [timer, setTimer] = useState(0);
   const [quizType, setQuizType] = useState('');
   const [answerValidation, setAnswerValidation] = useState({});
   const [answerSubmitted, setAnswerSubmitted] = useState(false);
@@ -51,15 +51,17 @@ const Quiz = () => {
   }, [quizType]);
 
   useEffect(() => {
-    const countdown = setInterval(() => {
-      setTimer(prevTimer => prevTimer - 1);
-    }, 1000);
-
-    return () => clearInterval(countdown);
-  }, []);
+    if (questions.length > 0) {
+      setTimer(questions.length * 60); // 60 seconds per question
+      const countdown = setInterval(() => {
+        setTimer(prevTimer => prevTimer - 1);
+      }, 1000);
+      return () => clearInterval(countdown);
+    }
+  }, [questions]);
 
   useEffect(() => {
-    if (timer === 0) {
+    if (timer === 0 && questions.length > 0) {
       alert('Timpul a expirat!');
       handleFinishQuiz();
     }
@@ -178,7 +180,7 @@ const Quiz = () => {
     setScore(0);
     setIncorrectAnswers(0);
     setFinished(false);
-    setTimer(2700);
+    setTimer(0);
     setQuizType('');
     setAnswerValidation({});
     setAnswerSubmitted(false);
@@ -200,7 +202,7 @@ const Quiz = () => {
   };
 
   const calculateProgress = () => {
-    const totalTime = 2700; // 45 minutes in seconds
+    const totalTime = questions.length * 60; // 60 seconds per question
     return ((totalTime - timer) / totalTime) * 100;
   };
 

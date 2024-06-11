@@ -25,6 +25,7 @@ const History = () => {
   const [history, setHistory] = useState([]);
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [categoryStats, setCategoryStats] = useState(null);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -67,8 +68,9 @@ const History = () => {
       type: 'pie',
       events: {
         dataPointSelection: (event, chartContext, config) => {
-          const category = config.w.config.labels[config.dataPointIndex];
-          setSelectedCategory(category);
+          const categoryKey = Object.keys(quizTypeMap)[config.dataPointIndex];
+          setSelectedCategory(categoryKey);
+          calculateCategoryStats(categoryKey);
         },
       },
     },
@@ -124,6 +126,27 @@ const History = () => {
   const handleCloseDialog = () => {
     setSelectedEntry(null);
   };
+
+  const calculateCategoryStats = (categoryKey) => {
+    const categoryHistory = history.filter(entry => entry.quiz_type === categoryKey);
+    const correctAnswersCategory = categoryHistory.reduce((acc, entry) => acc + entry.correct_answers, 0);
+    const totalTestsCategory = categoryHistory.length;
+    const passedTestsCategory = categoryHistory.filter(entry => entry.passed).length;
+    const passRateCategory = totalTestsCategory > 0 ? (passedTestsCategory / totalTestsCategory) * 100 : 0;
+
+    setCategoryStats({
+      correctAnswers: correctAnswersCategory,
+      totalTests: totalTestsCategory,
+      passedTests: passedTestsCategory,
+      passRate: passRateCategory,
+    });
+  };
+
+  useEffect(() => {
+    if (selectedCategory) {
+      calculateCategoryStats(selectedCategory);
+    }
+  }, [selectedCategory, history]);
 
   return (
     <Container maxWidth="md">
@@ -192,11 +215,15 @@ const History = () => {
           <Button onClick={handleCloseDialog} color="primary">Închide</Button>
         </DialogActions>
       </Dialog>
-      {selectedCategory && (
+      {selectedCategory && categoryStats && (
         <Dialog open={Boolean(selectedCategory)} onClose={() => setSelectedCategory('')}>
           <DialogTitle>Detalii Categorie</DialogTitle>
           <DialogContent>
-            <DialogContentText>{selectedCategory}</DialogContentText>
+            <DialogContentText>{quizTypeMap[selectedCategory]}</DialogContentText>
+            <DialogContentText>Total teste: {categoryStats.totalTests}</DialogContentText>
+            <DialogContentText>Teste promovate: {categoryStats.passedTests}</DialogContentText>
+            <DialogContentText>Rata de promovare: {categoryStats.passRate.toFixed(2)}%</DialogContentText>
+            <DialogContentText>Total răspunsuri corecte: {categoryStats.correctAnswers}</DialogContentText>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setSelectedCategory('')} color="primary">Închide</Button>
