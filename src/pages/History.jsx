@@ -5,6 +5,7 @@ import {
   Typography, Paper, Card, CardContent, Grid, Container, Box, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button
 } from '@mui/material';
 import Chart from 'react-apexcharts';
+import { useTheme } from '@mui/material/styles';
 
 const quizTypeMap = {
   all: 'Aleatoare (45 întrebări din toate categoriile)',
@@ -22,6 +23,7 @@ const quizTypeMap = {
 
 const History = () => {
   const { user } = useUser();
+  const theme = useTheme();
   const [history, setHistory] = useState([]);
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -50,8 +52,12 @@ const History = () => {
     fetchHistory();
   }, [user]);
 
+  const getTotalQuestions = (quizType) => {
+    return quizType === 'all' ? 45 : 40;
+  };
+
   const correctAnswers = history.reduce((acc, entry) => acc + entry.correct_answers, 0);
-  const totalQuestions = history.length * 45; // Asumând că fiecare chestionar are 45 de întrebări
+  const totalQuestions = history.reduce((acc, entry) => acc + getTotalQuestions(entry.quiz_type), 0);
   const incorrectAnswers = totalQuestions - correctAnswers;
   const passedTests = history.filter(entry => entry.passed).length;
   const totalTests = history.length;
@@ -63,9 +69,13 @@ const History = () => {
     return acc;
   }, {});
 
+  const textColor = theme.palette.mode === 'dark' ? '#ffffff' : '#000000';
+  const backgroundColor = theme.palette.background.paper;
+
   const categoriesChartOptions = {
     chart: {
       type: 'pie',
+      background: backgroundColor,
       events: {
         dataPointSelection: (event, chartContext, config) => {
           const categoryKey = Object.keys(quizTypeMap)[config.dataPointIndex];
@@ -78,6 +88,14 @@ const History = () => {
     legend: {
       show: false
     },
+    theme: {
+      mode: theme.palette.mode
+    },
+    dataLabels: {
+      style: {
+        colors: [textColor]
+      }
+    }
   };
 
   const categoriesChartSeries = Object.values(categoriesCount);
@@ -85,8 +103,17 @@ const History = () => {
   const pieChartOptions = {
     chart: {
       type: 'pie',
+      background: backgroundColor,
     },
     labels: ['Corecte', 'Greșite'],
+    theme: {
+      mode: theme.palette.mode
+    },
+    dataLabels: {
+      style: {
+        colors: [textColor]
+      }
+    }
   };
 
   const pieChartSeries = [correctAnswers, incorrectAnswers];
@@ -94,10 +121,31 @@ const History = () => {
   const barChartOptions = {
     chart: {
       type: 'bar',
+      background: backgroundColor,
     },
     xaxis: {
       categories: ['Număr Teste', 'Teste Promovate'],
+      labels: {
+        style: {
+          colors: [textColor]
+        }
+      }
     },
+    yaxis: {
+      labels: {
+        style: {
+          colors: [textColor]
+        }
+      }
+    },
+    theme: {
+      mode: theme.palette.mode
+    },
+    dataLabels: {
+      style: {
+        colors: [textColor]
+      }
+    }
   };
 
   const barChartSeries = [{
@@ -108,10 +156,31 @@ const History = () => {
   const averageChartOptions = {
     chart: {
       type: 'bar',
+      background: backgroundColor,
     },
     xaxis: {
       categories: ['Media Răspunsurilor Corecte'],
+      labels: {
+        style: {
+          colors: [textColor]
+        }
+      }
     },
+    yaxis: {
+      labels: {
+        style: {
+          colors: [textColor]
+        }
+      }
+    },
+    theme: {
+      mode: theme.palette.mode
+    },
+    dataLabels: {
+      style: {
+        colors: [textColor]
+      }
+    }
   };
 
   const averageChartSeries = [{
@@ -150,7 +219,7 @@ const History = () => {
 
   return (
     <Container maxWidth="md">
-      <Paper style={{ padding: '20px', textAlign: 'center' }}>
+      <Paper style={{ padding: '20px', textAlign: 'center', backgroundColor: backgroundColor }}>
         <Typography variant="h4" gutterBottom>Istoric Răspunsuri</Typography>
         <Grid container spacing={3} justifyContent="center">
           <Grid item xs={12} md={6}>
@@ -198,12 +267,15 @@ const History = () => {
               <DialogContentText>Data: {new Date(selectedEntry.created_at).toLocaleString('ro-RO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}</DialogContentText>
               <Chart
                 options={{
-                  chart: { type: 'bar' },
-                  xaxis: { categories: ['Întrebări', 'Răspunsuri Corecte'] },
+                  chart: { type: 'bar', background: backgroundColor },
+                  xaxis: { categories: ['Întrebări', 'Răspunsuri Corecte'], labels: { style: { colors: [textColor] } } },
+                  yaxis: { labels: { style: { colors: [textColor] } } },
+                  theme: { mode: theme.palette.mode },
+                  dataLabels: { style: { colors: [textColor] } }
                 }}
                 series={[{
                   name: 'Număr',
-                  data: [45, selectedEntry.correct_answers],
+                  data: [getTotalQuestions(selectedEntry.quiz_type), selectedEntry.correct_answers],
                 }]}
                 type="bar"
                 width="100%"
