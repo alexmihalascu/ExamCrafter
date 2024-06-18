@@ -26,6 +26,25 @@ const commonComponents = {
   },
 };
 
+const commonPalette = {
+  success: {
+    main: '#34c759', // Apple green
+    light: '#d4f8e8',
+  },
+  error: {
+    main: '#ff3b30', // Apple red
+    light: '#ffd9d9',
+  },
+  warning: {
+    main: '#ffcc00', // Apple yellow
+    light: '#fff4cc',
+  },
+  info: {
+    main: '#5ac8fa', // Apple cyan
+    light: '#d8f5ff',
+  },
+};
+
 export const lightTheme = createTheme({
   palette: {
     mode: 'light',
@@ -43,22 +62,7 @@ export const lightTheme = createTheme({
       primary: '#000000', // Black
       secondary: '#3c3c43', // Dark Grey
     },
-    success: {
-      main: '#34c759', // Apple green
-      light: '#d4f8e8',
-    },
-    error: {
-      main: '#ff3b30', // Apple red
-      light: '#ffd9d9',
-    },
-    warning: {
-      main: '#ffcc00', // Apple yellow
-      light: '#fff4cc',
-    },
-    info: {
-      main: '#5ac8fa', // Apple cyan
-      light: '#d8f5ff',
-    },
+    ...commonPalette,
   },
   components: {
     ...commonComponents,

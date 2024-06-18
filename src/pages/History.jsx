@@ -6,6 +6,7 @@ import {
 } from '@mui/material';
 import Chart from 'react-apexcharts';
 import { useTheme } from '@mui/material/styles';
+import { motion } from 'framer-motion';
 
 const quizTypeMap = {
   all: 'Aleatoare (45 întrebări din toate categoriile)',
@@ -28,6 +29,7 @@ const History = () => {
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [categoryStats, setCategoryStats] = useState(null);
+  const [animationKey, setAnimationKey] = useState(0);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -43,6 +45,7 @@ const History = () => {
             throw error;
           }
           setHistory(data);
+          setAnimationKey(prevKey => prevKey + 1); // Update the key to trigger re-animation
         } catch (error) {
           console.error('Error fetching history:', error);
         }
@@ -75,13 +78,26 @@ const History = () => {
   const categoriesChartOptions = {
     chart: {
       type: 'pie',
-      background: backgroundColor,
+      background: 'transparent',
       events: {
         dataPointSelection: (event, chartContext, config) => {
           const categoryKey = Object.keys(quizTypeMap)[config.dataPointIndex];
           setSelectedCategory(categoryKey);
           calculateCategoryStats(categoryKey);
         },
+        animations: {
+          enabled: true,
+          easing: 'easeinout',
+          speed: 800,
+          animateGradually: {
+            enabled: true,
+            delay: 150
+          },
+          dynamicAnimation: {
+            enabled: true,
+            speed: 350
+          }
+        }
       },
     },
     labels: Object.keys(categoriesCount).map(key => quizTypeMap[key]),
@@ -103,7 +119,20 @@ const History = () => {
   const pieChartOptions = {
     chart: {
       type: 'pie',
-      background: backgroundColor,
+      background: 'transparent',
+      animations: {
+        enabled: true,
+        easing: 'easeinout',
+        speed: 800,
+        animateGradually: {
+          enabled: true,
+          delay: 150
+        },
+        dynamicAnimation: {
+          enabled: true,
+          speed: 350
+        }
+      }
     },
     labels: ['Corecte', 'Greșite'],
     theme: {
@@ -122,6 +151,19 @@ const History = () => {
     chart: {
       type: 'bar',
       background: backgroundColor,
+      animations: {
+        enabled: true,
+        easing: 'easeinout',
+        speed: 800,
+        animateGradually: {
+          enabled: true,
+          delay: 150
+        },
+        dynamicAnimation: {
+          enabled: true,
+          speed: 350
+        }
+      }
     },
     xaxis: {
       categories: ['Număr Teste', 'Teste Promovate'],
@@ -157,6 +199,19 @@ const History = () => {
     chart: {
       type: 'bar',
       background: backgroundColor,
+      animations: {
+        enabled: true,
+        easing: 'easeinout',
+        speed: 800,
+        animateGradually: {
+          enabled: true,
+          delay: 150
+        },
+        dynamicAnimation: {
+          enabled: true,
+          speed: 350
+        }
+      }
     },
     xaxis: {
       categories: ['Media Răspunsurilor Corecte'],
@@ -223,19 +278,27 @@ const History = () => {
         <Typography variant="h4" gutterBottom>Istoric Răspunsuri</Typography>
         <Grid container spacing={3} justifyContent="center">
           <Grid item xs={12} md={6}>
-            <Chart options={pieChartOptions} series={pieChartSeries} type="pie" width="100%" />
+            <motion.div key={`pieChart-${animationKey}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1 }}>
+              <Chart options={pieChartOptions} series={pieChartSeries} type="pie" width="100%" />
+            </motion.div>
             <Typography variant="body1" align="center">Procentajul de răspunsuri corecte și greșite</Typography>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Chart options={categoriesChartOptions} series={categoriesChartSeries} type="pie" width="85%" />
+            <motion.div key={`categoriesChart-${animationKey}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1 }}>
+              <Chart options={categoriesChartOptions} series={categoriesChartSeries} type="pie" width="85%" />
+            </motion.div>
             <Typography variant="body1" align="center">Categorii de teste efectuate</Typography>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Chart options={barChartOptions} series={barChartSeries} type="bar" width="100%" />
+            <motion.div key={`barChart-${animationKey}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1 }}>
+              <Chart options={barChartOptions} series={barChartSeries} type="bar" width="100%" />
+            </motion.div>
             <Typography variant="body1" align="center">Numărul total de teste efectuate și teste promovate</Typography>
           </Grid>
           <Grid item xs={12} md={6}>
-            <Chart options={averageChartOptions} series={averageChartSeries} type="bar" width="100%" />
+            <motion.div key={`averageChart-${animationKey}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1 }}>
+              <Chart options={averageChartOptions} series={averageChartSeries} type="bar" width="100%" />
+            </motion.div>
             <Typography variant="body1" align="center">Media răspunsurilor corecte</Typography>
           </Grid>
         </Grid>
@@ -243,14 +306,19 @@ const History = () => {
           <Grid container spacing={3}>
             {history.map((entry, index) => (
               <Grid item xs={12} key={index}>
-                <Card onClick={() => handleCardClick(entry)} style={{ cursor: 'pointer' }}>
-                  <CardContent>
-                    <Typography variant="h6">Tip Grilă: {quizTypeMap[entry.quiz_type]}</Typography>
-                    <Typography>Răspunsuri corecte: {entry.correct_answers}</Typography>
-                    <Typography>Admis: {entry.passed ? 'Da' : 'Nu'}</Typography>
-                    <Typography>Data: {new Date(entry.created_at).toLocaleString('ro-RO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}</Typography>
-                  </CardContent>
-                </Card>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Card onClick={() => handleCardClick(entry)} style={{ cursor: 'pointer' }}>
+                    <CardContent>
+                      <Typography variant="h6">Tip Grilă: {quizTypeMap[entry.quiz_type]}</Typography>
+                      <Typography>Răspunsuri corecte: {entry.correct_answers}</Typography>
+                      <Typography>Admis: {entry.passed ? 'Da' : 'Nu'}</Typography>
+                      <Typography>Data: {new Date(entry.created_at).toLocaleString('ro-RO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}</Typography>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               </Grid>
             ))}
           </Grid>
