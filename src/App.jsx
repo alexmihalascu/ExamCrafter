@@ -12,13 +12,13 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { lightTheme, darkTheme } from './theme';
 
-const ProtectedRoute = () => {
+const ProtectedRoute = ({ children }) => {
   return (
     <>
       <SpeedInsights />
       
       <SignedIn>
-        <Outlet />
+        {children}
       </SignedIn>
       <SignedOut>
         <Navigate to="/sign-in" />
@@ -53,23 +53,17 @@ const App = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Navbar darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+      <SignedIn>
+        <Navbar darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+      </SignedIn>
       <Routes>
         <Route path="/" element={<Navigate to="/main" />} />
-        <Route path="/main" element={<ProtectedRoute />}>
-          <Route path="" element={<Main />} />
-        </Route>
-        <Route path="/history" element={<ProtectedRoute />}>
-          <Route path="" element={<History />} />
-        </Route>
-        <Route path="/quiz" element={<ProtectedRoute />}>
-          <Route path="" element={<Quiz />} />
-        </Route>
-        <Route path="/user" element={<ProtectedRoute />}>
-          <Route path="" element={<User />} />
-        </Route>
+        <Route path="/main" element={<ProtectedRoute><Main /></ProtectedRoute>} />
+        <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
+        <Route path="/quiz" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
+        <Route path="/user" element={<ProtectedRoute><User /></ProtectedRoute>} />
         <Route path="/sign-in" element={<SignIn />} />
-        <Route path="/logout" element={<Logout />} /> {/* Use Logout component */}
+        <Route path="/logout" element={<Logout />} />
       </Routes>
     </ThemeProvider>
   );
