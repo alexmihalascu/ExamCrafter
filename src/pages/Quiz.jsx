@@ -6,9 +6,14 @@ import {
   Button, CircularProgress, Typography, Box, Paper, Grid, Container, LinearProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle
 } from '@mui/material';
 import QuizSelection from '../components/QuizSelection';
+import { motion } from 'framer-motion';
+import CountUp from 'react-countup';
+import Chart from 'react-apexcharts';
+import { useTheme } from '@mui/material/styles';
 
 const Quiz = () => {
   const { user } = useUser();
+  const theme = useTheme();
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -216,6 +221,40 @@ const Quiz = () => {
     return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
   };
 
+  const textColor = theme.palette.mode === 'dark' ? '#ffffff' : '#000000';
+  const backgroundColor = theme.palette.background.paper;
+
+  const pieChartOptions = {
+    chart: {
+      type: 'pie',
+      background: 'transparent',
+      animations: {
+        enabled: true,
+        easing: 'easeinout',
+        speed: 800,
+        animateGradually: {
+          enabled: true,
+          delay: 150
+        },
+        dynamicAnimation: {
+          enabled: true,
+          speed: 350
+        }
+      }
+    },
+    labels: ['Corecte', 'Greșite'],
+    theme: {
+      mode: theme.palette.mode
+    },
+    dataLabels: {
+      style: {
+        colors: [textColor]
+      }
+    }
+  };
+
+  const pieChartSeries = [score, incorrectAnswers];
+
   if (loading) return <CircularProgress />;
 
   if (quizType === '' && questions.length === 0) {
@@ -225,90 +264,105 @@ const Quiz = () => {
   if (finished) {
     return (
       <Container maxWidth="md">
-        <Paper sx={{ padding: 3, textAlign: 'center' }}>
-          <Typography variant="h5">
-            Mulțumim pentru completarea chestionarului!
-          </Typography>
-          <Typography variant="h6">
-            Scorul tău: {score} din {questions.length}
-          </Typography>
-          <Typography variant="h6">
-            {passed ? 'Felicitări, ai trecut testul!' : 'Îmi pare rău, nu ai trecut testul.'}
-          </Typography>
-          <Button variant="contained" color="primary" onClick={handleRestartQuiz}>
-            Începe un nou chestionar
-          </Button>
-        </Paper>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Paper sx={{ padding: 3, textAlign: 'center' }}>
+            <Typography variant="h5">
+              Mulțumim pentru completarea chestionarului!
+            </Typography>
+            <Typography variant="h6">
+              Scorul tău: <CountUp end={score} duration={2} /> din {questions.length}
+            </Typography>
+            <Typography variant="h6">
+              {passed ? 'Felicitări, ai trecut testul!' : 'Îmi pare rău, nu ai trecut testul.'}
+            </Typography>
+            <Box display="flex" justifyContent="center">
+              <Chart options={pieChartOptions} series={pieChartSeries} type="pie" width="380" />
+            </Box>
+            <Button variant="contained" color="primary" onClick={handleRestartQuiz}>
+              Începe un nou chestionar
+            </Button>
+          </Paper>
+        </motion.div>
       </Container>
     );
   }
 
   return (
     <Container maxWidth="md">
-      <Paper sx={{ padding: 3, textAlign: 'center' }}>
-        <Typography variant="h4">Chestionar LICENȚĂ URA</Typography>
-        <Box mb={2} display="flex" flexDirection="column" alignItems="center">
-          {/* <CircularProgress variant="determinate" value={calculateProgress()} /> */}
-          <Typography variant="caption" component="div" color="textSecondary" sx={{ mt: 1 }}>
-            Timp rămas: {formatTime(timer)}
-          </Typography>
-        </Box>
-        <Box mb={2}>
-          <Typography variant="body1">Progres întrebări:</Typography>
-          <LinearProgress variant="determinate" value={calculateQuestionProgress()} />
-        </Box>
-        <Grid container spacing={2} justifyContent="center">
-          <Grid item>
-            <Paper sx={{ padding: 1, backgroundColor: 'success.light', borderRadius: 1 }}>
-              <Typography variant="body1">Întrebări corecte: {score}</Typography>
-            </Paper>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Paper sx={{ padding: 3, textAlign: 'center' }}>
+          <Typography variant="h4">Chestionar LICENȚĂ URA</Typography>
+          <Box mb={2} display="flex" flexDirection="column" alignItems="center">
+            {/* <CircularProgress variant="determinate" value={calculateProgress()} /> */}
+            <Typography variant="caption" component="div" color="textSecondary" sx={{ mt: 1 }}>
+              Timp rămas: {formatTime(timer)}
+            </Typography>
+          </Box>
+          <Box mb={2}>
+            <Typography variant="body1">Progres întrebări:</Typography>
+            <LinearProgress variant="determinate" value={calculateQuestionProgress()} />
+          </Box>
+          <Grid container spacing={2} justifyContent="center">
+            <Grid item>
+              <Paper sx={{ padding: 1, backgroundColor: 'success.light', borderRadius: 1 }}>
+                <Typography variant="body1">Întrebări corecte: {score}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item>
+              <Paper sx={{ padding: 1, backgroundColor: 'error.light', borderRadius: 1 }}>
+                <Typography variant="body1">Întrebări greșite: {incorrectAnswers}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item>
+              <Paper sx={{ padding: 1, backgroundColor: 'background.paper', borderRadius: 1 }}>
+                <Typography variant="body1">Întrebări rămase: {questions.length - currentQuestionIndex - 1}</Typography>
+              </Paper>
+            </Grid>
           </Grid>
-          <Grid item>
-            <Paper sx={{ padding: 1, backgroundColor: 'error.light', borderRadius: 1 }}>
-              <Typography variant="body1">Întrebări greșite: {incorrectAnswers}</Typography>
-            </Paper>
-          </Grid>
-          <Grid item>
-            <Paper sx={{ padding: 1, backgroundColor: 'background.paper', borderRadius: 1 }}>
-              <Typography variant="body1">Întrebări rămase: {questions.length - currentQuestionIndex - 1}</Typography>
-            </Paper>
-          </Grid>
-        </Grid>
-        {questions.length > 0 ? (
-          <div>
-            <Typography variant="h6">Grila {currentQuestionIndex + 1}: {questions[currentQuestionIndex].id}</Typography>
-            <Question
-              question={questions[currentQuestionIndex]}
-              selectedAnswer={answers[questions[currentQuestionIndex].id] || ''}
-              handleAnswerChange={(e) => handleAnswerChange(questions[currentQuestionIndex].id, e.target.value)}
-              answerValidation={answerValidation[questions[currentQuestionIndex].id]}
-              answerSubmitted={answerSubmitted}
-            />
-            <Box mt={4}>
-              {!answerSubmitted ? (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleSubmitAnswer}
-                  disabled={!answers[questions[currentQuestionIndex].id]}
-                >
-                  Trimite răspuns
-                </Button>
-              ) : (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleNextQuestion}
-                >
-                  {currentQuestionIndex < questions.length - 1 ? 'Următoarea' : 'Finalizează'}
-                </Button>
-              )}
-            </Box>
-          </div>
-        ) : (
-          <Typography variant="h6">Nu există întrebări disponibile.</Typography>
-        )}
-      </Paper>
+          {questions.length > 0 ? (
+            <div>
+              <Typography variant="h6">Grila {currentQuestionIndex + 1}: {questions[currentQuestionIndex].id}</Typography>
+              <Question
+                question={questions[currentQuestionIndex]}
+                selectedAnswer={answers[questions[currentQuestionIndex].id] || ''}
+                handleAnswerChange={(e) => handleAnswerChange(questions[currentQuestionIndex].id, e.target.value)}
+                answerValidation={answerValidation[questions[currentQuestionIndex].id]}
+                answerSubmitted={answerSubmitted}
+              />
+              <Box mt={4}>
+                {!answerSubmitted ? (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleSubmitAnswer}
+                    disabled={!answers[questions[currentQuestionIndex].id]}
+                  >
+                    Trimite răspuns
+                  </Button>
+                ) : (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleNextQuestion}
+                  >
+                    {currentQuestionIndex < questions.length - 1 ? 'Următoarea' : 'Finalizează'}
+                  </Button>
+                )}
+              </Box>
+            </div>
+          ) : (
+            <Typography variant="h6">Nu există întrebări disponibile.</Typography>
+          )}
+        </Paper>
+      </motion.div>
       <Dialog open={showDialog} onClose={() => setShowDialog(false)}>
         <DialogTitle>Avertisment</DialogTitle>
         <DialogContent>

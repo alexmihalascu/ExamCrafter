@@ -7,6 +7,7 @@ import {
 import Chart from 'react-apexcharts';
 import { useTheme } from '@mui/material/styles';
 import { motion } from 'framer-motion';
+import CountUp from 'react-countup';
 
 const quizTypeMap = {
   all: 'Aleatoare (45 întrebări din toate categoriile)',
@@ -359,11 +360,13 @@ const History = () => {
         <Dialog open={Boolean(selectedCategory)} onClose={() => setSelectedCategory('')}>
           <DialogTitle>Detalii Categorie</DialogTitle>
           <DialogContent>
-            <DialogContentText>{quizTypeMap[selectedCategory]}</DialogContentText>
-            <DialogContentText>Total teste: {categoryStats.totalTests}</DialogContentText>
-            <DialogContentText>Teste promovate: {categoryStats.passedTests}</DialogContentText>
-            <DialogContentText>Rata de promovare: {categoryStats.passRate.toFixed(2)}%</DialogContentText>
-            <DialogContentText>Total răspunsuri corecte: {categoryStats.correctAnswers}</DialogContentText>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+              <DialogContentText>{quizTypeMap[selectedCategory]}</DialogContentText>
+              <DialogContentText>Total teste: <CountUp end={categoryStats.totalTests} duration={2} /></DialogContentText>
+              <DialogContentText>Teste promovate: <CountUp end={categoryStats.passedTests} duration={2} /></DialogContentText>
+              <DialogContentText>Rata de promovare: <CountUp end={categoryStats.passRate} duration={2} decimals={2} />%</DialogContentText>
+              <DialogContentText>Total răspunsuri corecte: <CountUp end={categoryStats.correctAnswers} duration={2} /></DialogContentText>
+            </motion.div>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setSelectedCategory('')} color="primary">Închide</Button>

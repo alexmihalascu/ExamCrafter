@@ -1,23 +1,14 @@
 import React, { useState } from 'react';
-import { AppBar, Toolbar, Typography, IconButton, Menu, MenuItem, Box, Drawer, List, ListItem, ListItemText, useMediaQuery, useTheme } from '@mui/material';
+import { AppBar, Toolbar, Typography, IconButton, Box, Drawer, List, ListItem, ListItemText, useMediaQuery, useTheme } from '@mui/material';
 import { Icon } from '@iconify/react';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '/android-chrome-192x192.png';
 
 const Navbar = ({ darkMode, toggleDarkMode }) => {
-  const [anchorEl, setAnchorEl] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
-
-  const handleMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
 
   const handleDrawerToggle = () => {
     setDrawerOpen(!drawerOpen);
@@ -25,13 +16,12 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
 
   const handleNavigate = (path) => {
     navigate(path);
-    handleMenuClose();
-    handleDrawerToggle();
+    setDrawerOpen(false);
   };
 
   return (
     <>
-      <AppBar position="static" sx={{ backgroundColor: theme.palette.primary.main }}>
+      <AppBar position="static" sx={{ backgroundColor: theme.palette.primary.main, borderRadius: 0 }}>
         <Toolbar>
           <IconButton edge="start" color="inherit" aria-label="menu" onClick={() => navigate('/main')}>
             <img src={logo} alt="App Logo" style={{ width: 40, height: 40 }} />

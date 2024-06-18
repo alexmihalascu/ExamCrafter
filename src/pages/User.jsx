@@ -1,6 +1,7 @@
 import React from 'react';
 import { UserProfile } from '@clerk/clerk-react';
 import { Box, useTheme } from '@mui/material';
+import { motion } from 'framer-motion';
 
 const User = () => {
   const theme = useTheme();
@@ -46,10 +47,24 @@ const User = () => {
     },
   };
 
+  // Animation settings for the Box container
+  const boxVariants = {
+    hidden: { opacity: 0, y: 50 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.8 } }
+  };
+
   return (
-    <Box display="flex" justifyContent="center" alignItems="center" height="100vh" bgcolor={theme.palette.background.default}>
-      <UserProfile appearance={appearance} />
-    </Box>
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={boxVariants}
+      style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}
+      className="box-container"
+    >
+      <Box bgcolor={theme.palette.background.default}>
+        <UserProfile appearance={appearance} />
+      </Box>
+    </motion.div>
   );
 };
 
