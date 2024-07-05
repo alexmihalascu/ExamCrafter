@@ -10,3 +10,4 @@ const clerkAuthMiddleware = ClerkExpressWithAuth({
 });
 
 export default clerkAuthMiddleware;
+ 

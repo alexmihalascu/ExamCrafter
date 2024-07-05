@@ -57,13 +57,15 @@ const Quiz = () => {
 
   useEffect(() => {
     if (questions.length > 0) {
-      setTimer(questions.length * 60); // 60 seconds per question
+      if (timer === 0) {
+        setTimer(questions.length * 60); // 60 seconds per question
+      }
       const countdown = setInterval(() => {
         setTimer(prevTimer => prevTimer - 1);
       }, 1000);
       return () => clearInterval(countdown);
     }
-  }, [questions]);
+  }, [questions, timer]);
 
   useEffect(() => {
     if (timer === 0 && questions.length > 0) {
@@ -99,19 +101,19 @@ const Quiz = () => {
         ({ data, error } = await supabase.rpc('get_random_questions'));
       } else {
         const categoryMap = {
-          'category1': { start_id: 1000, end_id: 2000 },
-          'category2': { start_id: 2000, end_id: 3000 },
-          'category3': { start_id: 3000, end_id: 4000 },
-          'category4': { start_id: 4000, end_id: 5000 },
-          'category5': { start_id: 5000, end_id: 6000 },
-          'category6': { start_id: 6000, end_id: 7000 },
-          'category7': { start_id: 7000, end_id: 8000 },
-          'category8': { start_id: 8000, end_id: 9000 },
-          'category9': { start_id: 9000, end_id: 10000 },
-          'category10': { start_id: 10000, end_id: 11000 }
+          'category1': { start_id: 1000, end_id: 1040 },
+          'category2': { start_id: 2000, end_id: 2040 },
+          'category3': { start_id: 3000, end_id: 3040 },
+          'category4': { start_id: 4000, end_id: 4040 },
+          'category5': { start_id: 5000, end_id: 5040 },
+          'category6': { start_id: 6000, end_id: 6040 },
+          'category7': { start_id: 7000, end_id: 7040 },
+          'category8': { start_id: 8000, end_id: 8040 },
+          'category9': { start_id: 9000, end_id: 9040 },
+          'category10': { start_id: 10000, end_id: 10040 }
         };
         const { start_id, end_id } = categoryMap[quizType];
-        ({ data, error } = await supabase.rpc('get_random_questions_by_category', { start_id, end_id, limit_count: 45 }));
+        ({ data, error } = await supabase.rpc('get_random_questions_by_category', { start_id, end_id, limit_count: 40 }));
       }
       if (error) {
         throw error;
@@ -301,7 +303,6 @@ const Quiz = () => {
         <Paper sx={{ padding: 3, textAlign: 'center' }}>
           <Typography variant="h4">Chestionar LICENȚĂ URA</Typography>
           <Box mb={2} display="flex" flexDirection="column" alignItems="center">
-            {/* <CircularProgress variant="determinate" value={calculateProgress()} /> */}
             <Typography variant="caption" component="div" color="textSecondary" sx={{ mt: 1 }}>
               Timp rămas: {formatTime(timer)}
             </Typography>
