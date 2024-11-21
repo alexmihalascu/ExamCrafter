@@ -1,141 +1,202 @@
 import { createTheme } from '@mui/material/styles';
 
-const commonComponents = {
-  MuiPaper: {
+// Custom shadows for depth
+const shadows = [
+  'none',
+  '0px 2px 8px rgba(0, 0, 0, 0.1)',
+  '0px 4px 16px rgba(0, 0, 0, 0.12)',
+  '0px 8px 24px rgba(0, 0, 0, 0.14)',
+  '0px 12px 32px rgba(0, 0, 0, 0.16)',
+  '0px 16px 40px rgba(0, 0, 0, 0.18)',
+  ...Array(19).fill('none'),
+];
+
+// Typography configuration
+const typography = {
+  fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif",
+  h1: { fontSize: '2.5rem', fontWeight: 700, lineHeight: 1.2 },
+  h2: { fontSize: '2rem', fontWeight: 700, lineHeight: 1.3 },
+  h3: { fontSize: '1.75rem', fontWeight: 600, lineHeight: 1.3 },
+  h4: { fontSize: '1.5rem', fontWeight: 600, lineHeight: 1.4 },
+  h5: { fontSize: '1.25rem', fontWeight: 600, lineHeight: 1.4 },
+  h6: { fontSize: '1rem', fontWeight: 600, lineHeight: 1.4 },
+  button: { textTransform: 'none', fontWeight: 500 }
+};
+
+// Common component styles
+const components = {
+  MuiButton: {
+    styleOverrides: {
+      root: {
+        borderRadius: 8,
+        textTransform: 'none',
+        fontWeight: 500,
+        padding: '8px 16px',
+      },
+      contained: {
+        boxShadow: 'none',
+        '&:hover': {
+          boxShadow: shadows[1],
+        },
+      },
+    },
+  },
+  MuiCard: {
     styleOverrides: {
       root: {
         borderRadius: 12,
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)',
+        backgroundImage: 'none',
+      },
+    },
+  },
+  MuiPaper: {
+    styleOverrides: {
+      root: {
+        backgroundImage: 'none',
+        borderRadius: 12,
       },
     },
   },
   MuiAppBar: {
     styleOverrides: {
       root: {
-        borderRadius: 12,
+        borderRadius: 0,
+        backdropFilter: 'blur(8px)',
       },
     },
   },
-  MuiButton: {
+  MuiTextField: {
     styleOverrides: {
       root: {
-        borderRadius: 12,
-        textTransform: 'none',
+        '& .MuiOutlinedInput-root': {
+          borderRadius: 8,
+        },
       },
     },
   },
 };
 
-const commonPalette = {
-  success: {
-    main: '#34c759', // Apple green
-    light: '#d4f8e8',
-  },
-  error: {
-    main: '#ff3b30', // Apple red
-    light: '#ffd9d9',
-  },
-  warning: {
-    main: '#ffcc00', // Apple yellow
-    light: '#fff4cc',
-  },
-  info: {
-    main: '#5ac8fa', // Apple cyan
-    light: '#d8f5ff',
-  },
-};
-
+// Light theme
 export const lightTheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#007aff', // Apple blue
+      main: '#0A84FF',
+      light: '#6CB8FF',
+      dark: '#0058CC',
+      contrastText: '#FFFFFF',
     },
     secondary: {
-      main: '#ff9500', // Apple orange
+      main: '#FF9F0A',
+      light: '#FFCC66',
+      dark: '#CC7D00',
+      contrastText: '#000000',
     },
     background: {
-      default: '#f5f5f7', // Light Grey
-      paper: '#ffffff',
+      default: '#F2F2F7',
+      paper: '#FFFFFF',
     },
     text: {
-      primary: '#000000', // Black
-      secondary: '#3c3c43', // Dark Grey
+      primary: '#000000',
+      secondary: '#666666',
     },
-    ...commonPalette,
+    success: {
+      main: '#32D74B',
+      light: '#86E69D',
+      dark: '#248A32',
+    },
+    error: {
+      main: '#FF453A',
+      light: '#FF8A84',
+      dark: '#CC1810',
+    },
+    warning: {
+      main: '#FFD60A',
+      light: '#FFE566',
+      dark: '#CC9C00',
+    },
+    info: {
+      main: '#64D2FF',
+      light: '#A6E5FF',
+      dark: '#0091CC',
+    },
+    divider: 'rgba(0, 0, 0, 0.12)',
   },
-  components: {
-    ...commonComponents,
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          ...commonComponents.MuiPaper.styleOverrides.root,
-          backgroundColor: '#ffffff',
-          color: '#000000',
-        },
-      },
-    },
-    MuiAppBar: {
-      styleOverrides: {
-        colorPrimary: {
-          backgroundColor: '#007aff',
-        },
-      },
-    },
-  },
+  typography,
+  components,
+  shadows,
 });
 
+// Dark theme
 export const darkTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#0a84ff', // Apple dark blue
+      main: '#0A84FF',
+      light: '#5AC8FA',
+      dark: '#0058CC',
+      contrastText: '#FFFFFF',
     },
     secondary: {
-      main: '#ff9f0a', // Apple orange
+      main: '#FF9F0A',
+      light: '#FFB340',
+      dark: '#CC7D00',
+      contrastText: '#000000',
     },
     background: {
-      default: '#1c1c1e', // Dark Grey
-      paper: '#2c2c2e', // Mid Grey
+      default: '#000000',
+      paper: '#1C1C1E',
     },
     text: {
-      primary: '#ffffff', // White
-      secondary: '#bdbdbd', // Light Grey
+      primary: '#FFFFFF',
+      secondary: '#98989D',
     },
     success: {
-      main: '#30d158', // Apple green
-      light: '#0c5f17',
+      main: '#32D74B',
+      light: '#4CD964',
+      dark: '#248A32',
     },
     error: {
-      main: '#ff453a', // Apple red
-      light: '#7c211b',
+      main: '#FF453A',
+      light: '#FF6961',
+      dark: '#CC1810',
     },
     warning: {
-      main: '#ffd60a', // Apple yellow
-      light: '#6e5500',
+      main: '#FFD60A',
+      light: '#FFE33B',
+      dark: '#CC9C00',
     },
     info: {
-      main: '#64d2ff', // Apple cyan
-      light: '#004d71',
+      main: '#64D2FF',
+      light: '#91E4FF',
+      dark: '#0091CC',
     },
+    divider: 'rgba(255, 255, 255, 0.12)',
   },
+  typography,
   components: {
-    ...commonComponents,
+    ...components,
     MuiPaper: {
       styleOverrides: {
         root: {
-          ...commonComponents.MuiPaper.styleOverrides.root,
-          backgroundColor: '#2c2c2e',
-          color: '#ffffff',
+          backgroundImage: 'none',
+          borderRadius: 12,
+          backgroundColor: '#1C1C1E',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
         },
       },
     },
-    MuiAppBar: {
+    MuiCard: {
       styleOverrides: {
-        colorPrimary: {
-          backgroundColor: '#0a84ff',
+        root: {
+          backgroundImage: 'none',
+          borderRadius: 12,
+          backgroundColor: '#1C1C1E',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
         },
       },
     },
   },
+  shadows: shadows.map(shadow => 
+    shadow === 'none' ? shadow : shadow.replace('rgba(0, 0, 0,', 'rgba(0, 0, 0,')),
 });
