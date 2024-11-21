@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Route, Routes, Navigate, Outlet } from 'react-router-dom';
+import { Route, Routes, Navigate } from 'react-router-dom';
 import { SignedIn, SignedOut } from '@clerk/clerk-react';
 import Quiz from './pages/Quiz';
 import History from './pages/History';
@@ -9,7 +9,7 @@ import Logout from './pages/Logout';
 import Navbar from './components/Navbar';
 import User from './pages/User';
 import { SpeedInsights } from "@vercel/speed-insights/react";
-import { ThemeProvider, CssBaseline } from '@mui/material';
+import { ThemeProvider, CssBaseline, Box } from '@mui/material';
 import { lightTheme, darkTheme } from './theme';
 
 const ProtectedRoute = ({ children }) => {
@@ -53,18 +53,22 @@ const App = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <SignedIn>
-        <Navbar darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-      </SignedIn>
-      <Routes>
-        <Route path="/" element={<Navigate to="/main" />} />
-        <Route path="/main" element={<ProtectedRoute><Main /></ProtectedRoute>} />
-        <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
-        <Route path="/quiz" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
-        <Route path="/user" element={<ProtectedRoute><User /></ProtectedRoute>} />
-        <Route path="/sign-in" element={<SignIn />} />
-        <Route path="/logout" element={<Logout />} />
-      </Routes>
+      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' } }>
+        <SignedIn>
+          <Navbar darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+        </SignedIn>
+        <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+          <Routes>
+            <Route path="/" element={<Navigate to="/main" />} />
+            <Route path="/main" element={<ProtectedRoute><Main /></ProtectedRoute>} />
+            <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
+            <Route path="/quiz" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
+            <Route path="/user" element={<ProtectedRoute><User /></ProtectedRoute>} />
+            <Route path="/sign-in" element={<SignIn />} />
+            <Route path="/logout" element={<Logout />} />
+          </Routes>
+        </Box>
+      </Box>
     </ThemeProvider>
   );
 };
