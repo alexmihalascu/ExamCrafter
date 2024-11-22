@@ -7,7 +7,7 @@
 
 ## ✨ Key Features
 
-![Demo Preview](https://i.ibb.co/nftJM06/image.png)
+![Demo Preview](https://i.ibb.co/Hxv53KL/image.png)
 
 ### 📝 1. Quiz Selection
 - **Choose Your Challenge!** The ability to select between randomly generated questions (45 in total) or questions from specific categories.
