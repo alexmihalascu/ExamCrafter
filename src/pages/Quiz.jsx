@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabase/supabaseClient';
-import { useUser } from '@clerk/clerk-react';
+import { useAuth } from '../contexts/AuthContext';
+import { db } from '../firebase/firebaseConfig';
+import { collection, addDoc } from 'firebase/firestore';
 import {
   Button,
   CircularProgress,
@@ -22,7 +23,7 @@ import QuizSelection from '../components/QuizSelection';
 import QuizResults from '../components/QuizResults';
 
 const Quiz = () => {
-  const { user } = useUser();
+  const { currentUser } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -110,7 +111,7 @@ const Quiz = () => {
 
   const handleSubmitAnswer = () => {
     const currentQuestion = questions[currentQuestionIndex];
-    const isCorrect = answers[currentQuestion.id] === currentQuestion.varianta_corecta;
+    const isCorrect = answers[currentQuestion.id] === currentQuestion.raspuns_corect;
 
     if (isCorrect) {
       setScore((prev) => prev + 1);
@@ -132,17 +133,24 @@ const Quiz = () => {
     }
   };
 
-  const handleFinishQuiz = () => {
+  const handleFinishQuiz = async () => {
+    const isPassed = score >= questions.length / 2;
     setFinished(true);
-    setPassed(score >= questions.length / 2);
+    setPassed(isPassed);
 
-    if (user) {
-      supabase
-        .from('results')
-        .insert([{ user_id: user.id, quiz_type: quizType, correct_answers: score, passed }])
-        .then(({ error }) => {
-          if (error) console.error('Error saving results:', error);
+    if (currentUser) {
+      try {
+        await addDoc(collection(db, 'results'), {
+          user_id: currentUser.uid,
+          quiz_type: quizType,
+          correct_answers: score,
+          total_questions: questions.length,
+          passed: isPassed,
+          timestamp: new Date().toISOString(),
         });
+      } catch (error) {
+        console.error('Error saving results:', error);
+      }
     }
 
     localStorage.removeItem('quizState');

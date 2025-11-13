@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
-import { 
-  AppBar, Toolbar, Typography, IconButton, Box, Drawer, 
-  List, ListItem, ListItemText, ListItemIcon, useMediaQuery, 
-  useTheme, Stack, Divider 
+import React, { useState, useMemo } from 'react';
+import {
+  AppBar, Toolbar, Typography, IconButton, Box, Drawer,
+  List, ListItem, ListItemText, ListItemIcon, useMediaQuery,
+  useTheme, Stack, Divider, Chip
 } from '@mui/material';
 import { Icon } from '@iconify/react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuth } from '../contexts/AuthContext';
 import logo from '/android-chrome-192x192.png';
 
-const menuItems = [
+const baseMenuItems = [
   { path: '/main', label: 'Acasă', icon: 'mdi:home' },
   { path: '/history', label: 'Istoric', icon: 'mdi:history' },
   { path: '/quiz', label: 'Grile', icon: 'mdi:format-list-bulleted' },
@@ -22,6 +23,20 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAdmin } = useAuth();
+
+  const menuItems = useMemo(() => {
+    const items = [...baseMenuItems];
+    if (isAdmin()) {
+      items.splice(items.length - 1, 0, {
+        path: '/admin',
+        label: 'Admin',
+        icon: 'mdi:shield-crown',
+        isAdmin: true
+      });
+    }
+    return items;
+  }, [isAdmin]);
 
   const isActivePath = (path) => location.pathname === path;
 
@@ -126,19 +141,27 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
                       }}
                     >
                       <ListItemIcon sx={{ minWidth: 40 }}>
-                        <Icon 
-                          icon={item.icon} 
-                          width="24" 
+                        <Icon
+                          icon={item.icon}
+                          width="24"
                           height="24"
                           color={isActivePath(item.path) ? theme.palette.primary.main : undefined}
                         />
                       </ListItemIcon>
-                      <ListItemText 
+                      <ListItemText
                         primary={item.label}
                         sx={{
                           color: isActivePath(item.path) ? theme.palette.primary.main : undefined
                         }}
                       />
+                      {item.isAdmin && (
+                        <Chip
+                          label="ADMIN"
+                          size="small"
+                          color="error"
+                          sx={{ ml: 1 }}
+                        />
+                      )}
                     </ListItem>
                   ))}
                   <Divider sx={{ my: 2 }} />
@@ -202,10 +225,24 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
                     backgroundColor: isActivePath(item.path) ? 'rgba(255,255,255,0.1)' : 'transparent',
                     '&:hover': {
                       backgroundColor: 'rgba(255,255,255,0.2)'
-                    }
+                    },
+                    position: 'relative'
                   }}
                 >
                   <Typography>{item.label}</Typography>
+                  {item.isAdmin && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: -4,
+                        right: -4,
+                        bgcolor: theme.palette.error.main,
+                        borderRadius: '50%',
+                        width: 8,
+                        height: 8,
+                      }}
+                    />
+                  )}
                 </IconButton>
               </motion.div>
             ))}

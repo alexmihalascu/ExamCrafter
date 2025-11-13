@@ -9,8 +9,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import Chart from 'react-apexcharts';
 import CountUp from 'react-countup';
-import { useUser } from '@clerk/clerk-react';
-import { supabase } from '../supabase/supabaseClient';
+import { useAuth } from '../contexts/AuthContext';
+import { db } from '../firebase/firebaseConfig';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 
 // Quiz type mapping object
 const quizTypeMap = {
@@ -90,7 +91,7 @@ const ChartCard = ({ title, children }) => {
 };
 
 const History = () => {
-  const { user } = useUser();
+  const { currentUser } = useAuth();
   const theme = useTheme();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -99,39 +100,49 @@ const History = () => {
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [sortConfig, setSortConfig] = useState({
-    key: 'created_at',
+    key: 'timestamp',
     direction: 'desc'
   });
 
   useEffect(() => {
     const fetchHistory = async () => {
-      if (!user?.id) return;
-      
+      if (!currentUser?.uid) return;
+
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from('results')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+        const resultsRef = collection(db, 'results');
+        const q = query(
+          resultsRef,
+          where('user_id', '==', currentUser.uid)
+        );
 
-        if (error) throw error;
+        const querySnapshot = await getDocs(q);
+        const data = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          created_at: doc.data().timestamp || doc.data().created_at // Support both field names
+        }));
+
+        // Sort by timestamp/created_at in descending order
+        data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
         setHistory(data);
       } catch (err) {
         setError(err.message);
+        console.error('Error fetching history:', err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchHistory();
-  }, [user]);
+  }, [currentUser]);
 
   const stats = {
     totalTests: history.length,
     passedTests: history.filter(test => test.passed).length,
-    correctAnswers: history.reduce((acc, test) => acc + test.correct_answers, 0),
-    totalQuestions: history.reduce((acc, test) => acc + (test.quiz_type === 'all' ? 45 : 40), 0)
+    correctAnswers: history.reduce((acc, test) => acc + (test.correct_answers || 0), 0),
+    totalQuestions: history.reduce((acc, test) => acc + (test.total_questions || (test.quiz_type === 'all' ? 45 : 40)), 0)
   };
 
   stats.passRate = stats.totalTests ? (stats.passedTests / stats.totalTests) * 100 : 0;
@@ -139,19 +150,19 @@ const History = () => {
 
   const getSortedAndPaginatedHistory = () => {
     const sorted = [...history].sort((a, b) => {
-      if (sortConfig.key === 'created_at') {
-        return sortConfig.direction === 'desc' 
+      if (sortConfig.key === 'timestamp' || sortConfig.key === 'created_at') {
+        return sortConfig.direction === 'desc'
           ? new Date(b.created_at) - new Date(a.created_at)
           : new Date(a.created_at) - new Date(b.created_at);
       }
       if (sortConfig.key === 'correct_answers') {
         return sortConfig.direction === 'desc'
-          ? b.correct_answers - a.correct_answers
-          : a.correct_answers - b.correct_answers;
+          ? (b.correct_answers || 0) - (a.correct_answers || 0)
+          : (a.correct_answers || 0) - (b.correct_answers || 0);
       }
       return 0;
     });
-    
+
     return sorted.slice((page - 1) * rowsPerPage, page * rowsPerPage);
   };
   // Chart configurations
@@ -319,21 +330,21 @@ const History = () => {
   <Tooltip title="Sortare după dată">
   <IconButton
     onClick={() => setSortConfig({
-      key: 'created_at',
-      direction: sortConfig.key === 'created_at' && sortConfig.direction === 'desc' ? 'asc' : 'desc'
+      key: 'timestamp',
+      direction: (sortConfig.key === 'timestamp' || sortConfig.key === 'created_at') && sortConfig.direction === 'desc' ? 'asc' : 'desc'
     })}
     sx={{
-      color: sortConfig.key === 'created_at' ? 'primary.main' : 'text.secondary'
+      color: (sortConfig.key === 'timestamp' || sortConfig.key === 'created_at') ? 'primary.main' : 'text.secondary'
     }}
   >
-    <Icon 
-      icon={sortConfig.key === 'created_at' 
-        ? (sortConfig.direction === 'desc' 
+    <Icon
+      icon={(sortConfig.key === 'timestamp' || sortConfig.key === 'created_at')
+        ? (sortConfig.direction === 'desc'
           ? 'mdi:sort-calendar-descending'
           : 'mdi:sort-calendar-ascending')
         : 'mdi:calendar'
       }
-      width="24" 
+      width="24"
       height="24"
     />
   </IconButton>
@@ -403,7 +414,7 @@ const History = () => {
                             </Grid>
                             <Grid item xs={12} md={3}>
                               <Typography variant="h5" align="center">
-                                {entry.correct_answers}/{entry.quiz_type === 'all' ? 45 : 40}
+                                {entry.correct_answers}/{entry.total_questions || (entry.quiz_type === 'all' ? 45 : 40)}
                               </Typography>
                               <Typography variant="body2" color="text.secondary" align="center">
                                 Răspunsuri Corecte
@@ -533,7 +544,7 @@ const History = () => {
                     <Grid item xs={6}>
                       <Typography variant="body2" color="text.secondary">Total Întrebări</Typography>
                       <Typography variant="h6">
-                        {selectedEntry.quiz_type === 'all' ? 45 : 40}
+                        {selectedEntry.total_questions || (selectedEntry.quiz_type === 'all' ? 45 : 40)}
                       </Typography>
                     </Grid>
                     <Grid item xs={6}>
@@ -590,8 +601,8 @@ const History = () => {
                       Rată de Succes
                     </Typography>
                     <Typography variant="h6" color={selectedEntry.passed ? 'success.main' : 'error.main'}>
-                      <CountUp 
-                        end={(selectedEntry.correct_answers / (selectedEntry.quiz_type === 'all' ? 45 : 40)) * 100} 
+                      <CountUp
+                        end={(selectedEntry.correct_answers / (selectedEntry.total_questions || (selectedEntry.quiz_type === 'all' ? 45 : 40))) * 100}
                         duration={1.5}
                         decimals={1}
                         suffix="%"
@@ -600,7 +611,7 @@ const History = () => {
                   </Stack>
                   <LinearProgress
                     variant="determinate"
-                    value={(selectedEntry.correct_answers / (selectedEntry.quiz_type === 'all' ? 45 : 40)) * 100}
+                    value={(selectedEntry.correct_answers / (selectedEntry.total_questions || (selectedEntry.quiz_type === 'all' ? 45 : 40))) * 100}
                     sx={{
                       height: 8,
                       borderRadius: 4,
@@ -618,8 +629,8 @@ const History = () => {
                     Răspunsuri Incorecte
                   </Typography>
                   <Typography variant="h6" color="error.main">
-                    <CountUp 
-                      end={(selectedEntry.quiz_type === 'all' ? 45 : 40) - selectedEntry.correct_answers} 
+                    <CountUp
+                      end={(selectedEntry.total_questions || (selectedEntry.quiz_type === 'all' ? 45 : 40)) - selectedEntry.correct_answers}
                       duration={1}
                     />
                   </Typography>

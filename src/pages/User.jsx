@@ -1,70 +1,171 @@
-import React from 'react';
-import { UserProfile } from '@clerk/clerk-react';
-import { Box, useTheme } from '@mui/material';
+import React, { useState } from 'react';
+import {
+  Box,
+  Container,
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  Avatar,
+  Grid,
+  Alert,
+  useTheme,
+  Divider,
+} from '@mui/material';
 import { motion } from 'framer-motion';
+import { Icon } from '@iconify/react';
+import { useAuth } from '../contexts/AuthContext';
+import { updateProfile } from 'firebase/auth';
+import Footer from '../components/Footer';
 
 const User = () => {
   const theme = useTheme();
-  const appearance = {
-    variables: {
-      colorPrimary: theme.palette.primary.main,
-      colorBackground: theme.palette.background.default,
-      colorText: theme.palette.text.primary,
-      colorTextSecondary: theme.palette.text.secondary,
-      borderRadius: '12px',
-      fontFamily: theme.typography.fontFamily,
-    },
-    elements: {
-      card: {
-        backgroundColor: theme.palette.background.paper,
-        color: theme.palette.text.primary,
-        borderRadius: '12px',
-        boxShadow: theme.shadows[3],
-      },
-      headerTitle: {
-        color: theme.palette.text.primary,
-      },
-      headerSubtitle: {
-        color: theme.palette.text.secondary,
-      },
-      profileSection: {
-        backgroundColor: theme.palette.background.paper,
-        color: theme.palette.text.primary,
-        borderRadius: '12px',
-      },
-      inputField: {
-        backgroundColor: theme.palette.background.default,
-        color: theme.palette.text.primary,
-        borderColor: theme.palette.divider,
-      },
-      button: {
-        backgroundColor: theme.palette.primary.main,
-        color: theme.palette.primary.contrastText,
-        '&:hover': {
-          backgroundColor: theme.palette.primary.dark,
-        },
-      },
-    },
+  const { currentUser, resetPassword } = useAuth();
+  const [displayName, setDisplayName] = useState(currentUser?.displayName || '');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState({ text: '', type: '' });
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage({ text: '', type: '' });
+
+    try {
+      await updateProfile(currentUser, { displayName });
+      setMessage({ text: 'Profil actualizat cu succes!', type: 'success' });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setMessage({ text: 'Eroare la actualizarea profilului.', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Animation settings for the Box container
+  const handleResetPassword = async () => {
+    setLoading(true);
+    setMessage({ text: '', type: '' });
+
+    try {
+      await resetPassword(currentUser.email);
+      setMessage({ text: 'Email de resetare parolă trimis cu succes!', type: 'success' });
+    } catch (error) {
+      console.error('Error sending password reset:', error);
+      setMessage({ text: 'Eroare la trimiterea emailului de resetare.', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const boxVariants = {
     hidden: { opacity: 0, y: 50 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.8 } }
   };
 
   return (
-    <motion.div
-      initial="hidden"
-      animate="visible"
-      variants={boxVariants}
-      style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}
-      className="box-container"
-    >
-      <Box bgcolor={theme.palette.background.default}>
-        <UserProfile appearance={appearance} />
-      </Box>
-    </motion.div>
+    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: theme.palette.background.default }}>
+      <Container maxWidth="md" sx={{ flex: 1, py: 4 }}>
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={boxVariants}
+        >
+          <Paper elevation={2} sx={{ p: 4, borderRadius: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+              <Icon icon="mdi:account-cog" width={40} height={40} color={theme.palette.primary.main} />
+              <Typography variant="h4" fontWeight="bold" sx={{ ml: 2 }}>
+                Setări Cont
+              </Typography>
+            </Box>
+
+            {message.text && (
+              <Alert severity={message.type} sx={{ mb: 3 }}>
+                {message.text}
+              </Alert>
+            )}
+
+            <Grid container spacing={4}>
+              <Grid item xs={12} sx={{ textAlign: 'center' }}>
+                <Avatar
+                  src={currentUser?.photoURL}
+                  alt={currentUser?.displayName}
+                  sx={{
+                    width: 120,
+                    height: 120,
+                    margin: '0 auto',
+                    mb: 2,
+                    border: `4px solid ${theme.palette.primary.main}`,
+                  }}
+                />
+                <Typography variant="h6" gutterBottom>
+                  {currentUser?.displayName || 'Utilizator'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {currentUser?.email}
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom>
+                  Informații Profil
+                </Typography>
+                <form onSubmit={handleUpdateProfile}>
+                  <TextField
+                    fullWidth
+                    label="Nume Complet"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    sx={{ mb: 2 }}
+                  />
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    value={currentUser?.email}
+                    disabled
+                    sx={{ mb: 3 }}
+                  />
+                  <Button
+                    variant="contained"
+                    type="submit"
+                    disabled={loading}
+                    fullWidth
+                    startIcon={<Icon icon="mdi:content-save" />}
+                  >
+                    Salvează Modificări
+                  </Button>
+                </form>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom>
+                  Securitate
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Resetează parola prin email
+                </Typography>
+                <Button
+                  variant="outlined"
+                  onClick={handleResetPassword}
+                  disabled={loading}
+                  fullWidth
+                  startIcon={<Icon icon="mdi:lock-reset" />}
+                >
+                  Trimite Email Resetare Parolă
+                </Button>
+              </Grid>
+            </Grid>
+          </Paper>
+        </motion.div>
+      </Container>
+      <Footer />
+    </Box>
   );
 };
 

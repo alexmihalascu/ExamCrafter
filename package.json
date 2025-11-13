@@ -30,17 +30,20 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "firebase": "^12.5.0",
     "framer-motion": "^11.2.10",
     "helmet": "^7.1.0",
     "http": "^0.0.1-security",
     "mysql": "^2.18.1",
+    "papaparse": "^5.5.3",
     "react": "^18.2.0",
     "react-apexcharts": "^1.4.1",
     "react-countup": "^6.5.3",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.23.1",
     "serverless-mysql": "^1.5.5",
-    "supabase": "^1.172.2"
+    "supabase": "^1.172.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/compat": "^1.0.3",

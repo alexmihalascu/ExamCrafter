@@ -6,8 +6,9 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import CountUp from 'react-countup';
-import { useUser } from '@clerk/clerk-react';
-import { supabase } from '../supabase/supabaseClient';
+import { useAuth } from '../contexts/AuthContext';
+import { db } from '../firebase/firebaseConfig';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
 
@@ -67,23 +68,22 @@ const FeatureCard = ({ icon, title, description, delay }) => {
 };
 
 const Main = () => {
-  const { user } = useUser();
+  const { currentUser } = useAuth();
   const theme = useTheme();
   const navigate = useNavigate();
   const [testStats, setTestStats] = useState({ totalTests: 0, passedTests: 0 });
 
   useEffect(() => {
     const fetchTestStats = async () => {
-      if (user?.id) {
+      if (currentUser?.uid) {
         try {
-          const { data, error } = await supabase
-            .from('results')
-            .select('*')
-            .eq('user_id', user.id);
+          const resultsRef = collection(db, 'results');
+          const q = query(resultsRef, where('user_id', '==', currentUser.uid));
+          const querySnapshot = await getDocs(q);
 
-          if (error) throw error;
-
+          const data = querySnapshot.docs.map(doc => doc.data());
           const passedTests = data.filter(test => test.passed).length;
+
           setTestStats({
             totalTests: data.length,
             passedTests
@@ -95,7 +95,7 @@ const Main = () => {
     };
 
     fetchTestStats();
-  }, [user]);
+  }, [currentUser]);
 
   const features = [
     {
@@ -138,7 +138,7 @@ const Main = () => {
                 border: `1px solid ${theme.palette.grey[800]}`
               }}
             >
-              {user && (
+              {currentUser && (
                 <Box sx={{ textAlign: 'center' }}>
                   <motion.div
                     initial={{ scale: 0 }}
@@ -146,9 +146,9 @@ const Main = () => {
                     transition={{ type: "spring", stiffness: 260, damping: 20 }}
                   >
                     <Avatar
-                      src={user.imageUrl}
-                      alt={user.fullName}
-                      sx={{ 
+                      src={currentUser.photoURL}
+                      alt={currentUser.displayName}
+                      sx={{
                         width: 96,
                         height: 96,
                         margin: '0 auto',
@@ -158,9 +158,9 @@ const Main = () => {
                       }}
                     />
                   </motion.div>
-                  
+
                   <Typography variant="h3" fontWeight="bold" color="white" gutterBottom>
-                    Bună, {user.firstName}!
+                    Bună, {currentUser.displayName?.split(' ')[0] || 'User'}!
                   </Typography>
                   <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.9)', mb: 4 }}>
                     Bine ai venit înapoi la ExamCrafter

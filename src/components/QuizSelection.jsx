@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { 
+import {
   Container, Paper, Typography, MenuItem, Select, Button, Box,
-  ListSubheader, useTheme, useMediaQuery 
+  ListSubheader, useTheme, useMediaQuery
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
-import { supabase } from '../supabase/supabaseClient';
+import { db } from '../firebase/firebaseConfig';
+import { collection, query, where, getDocs, limit as firestoreLimit } from 'firebase/firestore';
 
 const categories = [
   {
@@ -61,41 +62,76 @@ const QuizSelection = React.memo(({ onSelect }) => {
     setSelectedOption(event.target.value);
   };
 
+  const shuffleArray = (array) => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
   const handleStartQuiz = async () => {
     if (selectedOption) {
       setLoading(true);
       try {
         // Fetch questions based on the selected category
-        let data;
+        let data = [];
+        const questionsRef = collection(db, 'intrebari');
+
         if (selectedOption === 'all') {
-          const response = await supabase.rpc('get_random_questions');
-          data = response.data;
+          // Get all questions and randomly select 45
+          const querySnapshot = await getDocs(questionsRef);
+          const allQuestions = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          data = shuffleArray(allQuestions).slice(0, 45);
         } else {
+          // Get questions by category
           const categoryMap = {
-            category1: { start_id: 1000, end_id: 1040 },
-            category2: { start_id: 2000, end_id: 2040 },
-            category3: { start_id: 3000, end_id: 3040 },
-            category4: { start_id: 4000, end_id: 4040 },
-            category5: { start_id: 5000, end_id: 5040 },
-            category6: { start_id: 6000, end_id: 6040 },
-            category7: { start_id: 7000, end_id: 7040 },
-            category8: { start_id: 8000, end_id: 8040 },
-            category9: { start_id: 9000, end_id: 9040 },
-            category10: { start_id: 10000, end_id: 10040 },
+            category1: 'MS ACCESS - Rezolvate',
+            category2: 'MS ACCESS - Propuse',
+            category3: 'ORACLE SQL - Rezolvate',
+            category4: 'ORACLE SQL - Propuse',
+            category5: 'Sisteme Informatice - Rezolvate',
+            category6: 'Sisteme Informatice - Propuse',
+            category7: 'Arhitectura Calculatoarelor - Rezolvate',
+            category8: 'Arhitectura Calculatoarelor - Propuse',
+            category9: 'Programare C# - Rezolvate',
+            category10: 'Programare C# - Propuse',
           };
-          const { start_id, end_id } = categoryMap[selectedOption];
-          const response = await supabase.rpc('get_random_questions_by_category', {
-            start_id,
-            end_id,
-            limit_count: 40,
-          });
-          data = response.data;
+
+          const categoryName = categoryMap[selectedOption];
+          if (categoryName) {
+            const q = query(questionsRef, where('categorie', '==', categoryName));
+            const querySnapshot = await getDocs(q);
+            const categoryQuestions = querySnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }));
+            data = shuffleArray(categoryQuestions).slice(0, 40);
+          } else {
+            // Fallback: get random questions
+            const querySnapshot = await getDocs(questionsRef);
+            const allQuestions = querySnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }));
+            data = shuffleArray(allQuestions).slice(0, 40);
+          }
+        }
+
+        if (data.length === 0) {
+          alert('Nu există întrebări disponibile pentru această categorie. Te rog să contactezi administratorul.');
+          setLoading(false);
+          return;
         }
 
         // Save quiz state and questions to localStorage
         const initialQuizState = {
           quizType: selectedOption,
-          questions: data || [],
+          questions: data,
           currentQuestionIndex: 0,
           answers: {},
           score: 0,

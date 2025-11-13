@@ -10,15 +10,18 @@ const Question = ({ question, handleAnswerChange, selectedAnswer, answerValidati
     return null; // Prevent rendering if question is undefined
   }
 
+  // Get correct answer - support both field names for compatibility
+  const correctAnswer = question.raspuns_corect || question.varianta_corecta;
+
   // Background color logic
   const getColor = (option) => {
     if (!answerSubmitted) {
       return theme.palette.background.paper; // Default background before submission
     }
-    if (option === question.varianta_corecta) {
+    if (option === correctAnswer) {
       return theme.palette.success.light; // Always highlight the correct answer in green
     }
-    if (option === selectedAnswer && selectedAnswer !== question.varianta_corecta) {
+    if (option === selectedAnswer && selectedAnswer !== correctAnswer) {
       return theme.palette.error.light; // Highlight the incorrect selected answer in red
     }
     return theme.palette.background.paper; // Default for other options
@@ -29,10 +32,10 @@ const Question = ({ question, handleAnswerChange, selectedAnswer, answerValidati
     if (!answerSubmitted) {
       return selectedAnswer === option ? theme.palette.primary.main : theme.palette.divider;
     }
-    if (option === question.varianta_corecta) {
+    if (option === correctAnswer) {
       return theme.palette.success.main; // Correct answer
     }
-    if (option === selectedAnswer && selectedAnswer !== question.varianta_corecta) {
+    if (option === selectedAnswer && selectedAnswer !== correctAnswer) {
       return theme.palette.error.main; // Incorrect selected answer
     }
     return theme.palette.divider; // Neutral border for other options
@@ -101,9 +104,9 @@ const Question = ({ question, handleAnswerChange, selectedAnswer, answerValidati
                       variant="body1"
                       sx={{
                         color:
-                          answerSubmitted && option === question.varianta_corecta
+                          answerSubmitted && option === correctAnswer
                             ? theme.palette.success.main // Correct answer
-                            : answerSubmitted && option === selectedAnswer && selectedAnswer !== question.varianta_corecta
+                            : answerSubmitted && option === selectedAnswer && selectedAnswer !== correctAnswer
                             ? theme.palette.error.main // Incorrect answer
                             : 'text.primary', // Default text color
                       }}
