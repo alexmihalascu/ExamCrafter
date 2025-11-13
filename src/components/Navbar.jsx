@@ -1,4 +1,3 @@
-import React, { useMemo, useState } from 'react';
 import { Icon } from '@iconify/react';
 import {
   AppBar,
@@ -21,7 +20,9 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { motion } from 'framer-motion';
+import { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import logo from '/android-chrome-192x192.png';
@@ -31,7 +32,6 @@ const baseMenuItems = [
   { path: '/history', label: 'Istoric', icon: 'mdi:history' },
   { path: '/quiz', label: 'Grile', icon: 'mdi:format-list-bulleted' },
   { path: '/sets', label: 'Seturi', icon: 'mdi:folder-table' },
-  { path: '/user', label: 'Setari cont', icon: 'mdi:account' },
 ];
 
 const Navbar = ({ darkMode, toggleDarkMode }) => {
@@ -39,6 +39,11 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
   const [accountAnchorEl, setAccountAnchorEl] = useState(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isDark = theme.palette.mode === 'dark';
+  const navbarBg = isDark ? 'rgba(10,12,25,0.82)' : 'rgba(252,253,255,0.92)';
+  const navbarBorder = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(21,25,45,0.12)';
+  const navbarShadow = isDark ? '0 25px 55px rgba(5,6,22,0.35)' : '0 20px 45px rgba(23,30,55,0.12)';
+  const textColor = theme.palette.text.primary;
   const navigate = useNavigate();
   const location = useLocation();
   const menuItems = useMemo(() => baseMenuItems, []);
@@ -71,13 +76,14 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
         borderRadius: isMobile ? 0 : 999,
         px: isMobile ? 0 : 2,
         mt: isMobile ? 0 : 2,
-        background: 'rgba(10, 12, 28, 0.7)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        boxShadow: '0 25px 55px rgba(5,6,22,0.35)',
+        background: navbarBg,
+        border: `1px solid ${navbarBorder}`,
+        boxShadow: navbarShadow,
         backdropFilter: 'blur(24px)',
+        color: textColor,
       }}
     >
-      <Toolbar sx={{ py: isMobile ? 1 : 1.5 }}>
+      <Toolbar sx={{ py: isMobile ? 1 : 1.5, color: textColor }}>
         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
           <IconButton edge="start" color="inherit" onClick={() => navigate('/main')}>
             <img
@@ -99,7 +105,7 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
               fontWeight: 600,
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
-              color: 'white',
+              color: textColor,
             }}
           >
             ExamCrafter
@@ -132,7 +138,10 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
                       p: 2,
                       mb: 2,
                       borderRadius: 3,
-                      background: 'rgba(255,255,255,0.06)',
+                      background: isDark
+                        ? 'rgba(255,255,255,0.06)'
+                        : alpha(theme.palette.primary.main, 0.06),
+                      color: textColor,
                     }}
                   >
                     <Stack direction="row" spacing={2} alignItems="center">
@@ -152,22 +161,13 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
                       <Button
                         variant="outlined"
                         size="small"
+                        color="primary"
                         onClick={() => {
                           navigate('/user');
                           setDrawerOpen(false);
                         }}
                       >
                         Profil
-                      </Button>
-                      <Button
-                        variant="text"
-                        size="small"
-                        onClick={() => {
-                          navigate('/sets');
-                          setDrawerOpen(false);
-                        }}
-                      >
-                        Seturi
                       </Button>
                       <Button color="error" size="small" onClick={handleLogout}>
                         Deconectare
@@ -192,7 +192,14 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
                         borderRadius: 1,
                         mb: 1,
                         '&.Mui-selected': {
-                          backgroundColor: `${theme.palette.primary.main}15`,
+                          backgroundColor: alpha(theme.palette.primary.main, isDark ? 0.2 : 0.12),
+                          color: theme.palette.primary.contrastText,
+                          '& .MuiListItemIcon-root': {
+                            color: theme.palette.primary.contrastText,
+                          },
+                          '& .MuiListItemText-primary': {
+                            color: theme.palette.primary.contrastText,
+                          },
                         },
                       }}
                     >
@@ -202,7 +209,9 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
                       <ListItemText
                         primary={item.label}
                         sx={{
-                          color: isActivePath(item.path) ? theme.palette.primary.main : undefined,
+                          color: isActivePath(item.path)
+                            ? theme.palette.primary.main
+                            : theme.palette.text.primary,
                         }}
                       />
                     </ListItem>
@@ -231,11 +240,21 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
                     borderRadius: 999,
                     transition: 'all 0.2s ease',
                     backgroundColor: isActivePath(item.path)
-                      ? 'rgba(255,255,255,0.16)'
+                      ? alpha(theme.palette.primary.main, isDark ? 0.25 : 0.1)
                       : 'transparent',
+                    color: isActivePath(item.path) ? theme.palette.primary.contrastText : textColor,
                   }}
                 >
-                  <Typography>{item.label}</Typography>
+                  <Typography
+                    sx={{
+                      color: isActivePath(item.path)
+                        ? theme.palette.primary.contrastText
+                        : textColor,
+                      fontWeight: isActivePath(item.path) ? 600 : 500,
+                    }}
+                  >
+                    {item.label}
+                  </Typography>
                 </IconButton>
               </motion.div>
             ))}
@@ -243,7 +262,8 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
               color="inherit"
               onClick={toggleDarkMode}
               sx={{
-                '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
+                color: textColor,
+                '&:hover': { backgroundColor: alpha(textColor, isDark ? 0.18 : 0.12) },
               }}
             >
               <Icon icon={darkMode ? 'mdi:weather-sunny' : 'mdi:weather-night'} />
@@ -287,17 +307,6 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
                       <Icon icon="mdi:account" />
                     </ListItemIcon>
                     <ListItemText primary="Profil" />
-                  </MenuItem>
-                  <MenuItem
-                    onClick={() => {
-                      handleAccountMenuClose();
-                      navigate('/sets');
-                    }}
-                  >
-                    <ListItemIcon>
-                      <Icon icon="mdi:folder-table" />
-                    </ListItemIcon>
-                    <ListItemText primary="Seturi" />
                   </MenuItem>
                   <Divider sx={{ my: 1 }} />
                   <MenuItem onClick={handleLogout}>

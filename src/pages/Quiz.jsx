@@ -34,6 +34,9 @@ const shuffleArray = (items) => {
   return list;
 };
 
+const getQuizStateKey = (uid) => (uid ? `quizState_${uid}` : null);
+const LEGACY_QUIZ_STATE_KEY = 'quizState';
+
 const Quiz = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
@@ -96,32 +99,60 @@ useEffect(() => {
 }, [currentUser]);
 
   useEffect(() => {
-    const savedState = JSON.parse(localStorage.getItem('quizState'));
-    if (savedState && savedState.quizType) {
-      setQuestions((savedState.questions || []).map((question) => normalizeStoredQuestion(question)));
-      setQuizType(savedState.quizType || '');
-      setCurrentQuestionIndex(savedState.currentQuestionIndex || 0);
-      setAnswers(savedState.answers || {});
-      setScore(savedState.score || 0);
-      setIncorrectAnswers(savedState.incorrectAnswers || 0);
-      setTimer(savedState.timer || 60);
-      setFinished(savedState.finished || false);
-      setPassed(savedState.passed || false);
-      setAnswerSubmitted(savedState.answerSubmitted || false);
-      setActiveSetMeta(savedState.activeSetMeta || null);
-      setActiveBundleMeta(savedState.activeBundleMeta || null);
-      setIsQuizActive(true);
-    } else {
-      setShowQuizSelection(true);
-    }
-    setIsStateLoaded(true);
-  }, []);
+    const hydrateState = () => {
+      const storageKey = getQuizStateKey(currentUser?.uid);
+      let savedState = null;
+
+      if (storageKey) {
+        const stored = localStorage.getItem(storageKey);
+        if (stored) {
+          savedState = JSON.parse(stored);
+        }
+      }
+
+      if (!savedState) {
+        const legacyStored = localStorage.getItem(LEGACY_QUIZ_STATE_KEY);
+        if (legacyStored) {
+          const parsed = JSON.parse(legacyStored);
+          if (!parsed?.userId || parsed.userId === currentUser?.uid) {
+            savedState = parsed;
+          }
+        }
+      }
+
+      if (savedState && savedState.quizType) {
+        setQuestions((savedState.questions || []).map((question) => normalizeStoredQuestion(question)));
+        setQuizType(savedState.quizType || '');
+        setCurrentQuestionIndex(savedState.currentQuestionIndex || 0);
+        setAnswers(savedState.answers || {});
+        setScore(savedState.score || 0);
+        setIncorrectAnswers(savedState.incorrectAnswers || 0);
+        setTimer(savedState.timer || 60);
+        setFinished(savedState.finished || false);
+        setPassed(savedState.passed || false);
+        setAnswerSubmitted(savedState.answerSubmitted || false);
+        setActiveSetMeta(savedState.activeSetMeta || null);
+        setActiveBundleMeta(savedState.activeBundleMeta || null);
+        setIsQuizActive(true);
+      } else {
+        setShowQuizSelection(true);
+      }
+      setIsStateLoaded(true);
+    };
+
+    hydrateState();
+  }, [currentUser]);
 
   useEffect(() => {
     if (!isStateLoaded) return;
 
-    if (!isQuizActive) {
-      localStorage.removeItem('quizState');
+    const storageKey = getQuizStateKey(currentUser?.uid);
+
+    if (!isQuizActive || !storageKey) {
+      if (storageKey) {
+        localStorage.removeItem(storageKey);
+      }
+      localStorage.removeItem(LEGACY_QUIZ_STATE_KEY);
       return;
     }
 
@@ -133,14 +164,16 @@ useEffect(() => {
       score,
       incorrectAnswers,
       timer,
-    finished,
-    passed,
-    answerSubmitted,
-    activeSetMeta,
-    activeBundleMeta,
-  };
+      finished,
+      passed,
+      answerSubmitted,
+      activeSetMeta,
+      activeBundleMeta,
+      userId: currentUser?.uid || null,
+    };
 
-    localStorage.setItem('quizState', JSON.stringify(stateToSave));
+    localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+    localStorage.removeItem(LEGACY_QUIZ_STATE_KEY);
   }, [
     questions,
     quizType,
@@ -156,6 +189,7 @@ useEffect(() => {
     activeBundleMeta,
     isStateLoaded,
     isQuizActive,
+    currentUser,
   ]);
 
   useEffect(() => {
@@ -263,6 +297,7 @@ useEffect(() => {
         answerSubmitted: false,
         activeSetMeta: meta,
         activeBundleMeta: null,
+        userId: currentUser?.uid || null,
       };
 
       setQuestions(limitedQuestions);
@@ -279,7 +314,11 @@ useEffect(() => {
       setActiveSetMeta(meta);
       setIsQuizActive(true);
       setShowQuizSelection(false);
-      localStorage.setItem('quizState', JSON.stringify(initialState));
+      const storageKey = getQuizStateKey(currentUser?.uid);
+      if (storageKey) {
+        localStorage.setItem(storageKey, JSON.stringify(initialState));
+      }
+      localStorage.removeItem(LEGACY_QUIZ_STATE_KEY);
     } catch (error) {
       console.error('Failed to start quiz from set:', error);
       alert('Nu s-au putut incarca intrebarile pentru acest set.');
@@ -343,6 +382,7 @@ useEffect(() => {
         answerSubmitted: false,
         activeSetMeta: null,
         activeBundleMeta: meta,
+        userId: currentUser?.uid || null,
       };
 
       setQuestions(limitedQuestions);
@@ -360,7 +400,11 @@ useEffect(() => {
       setIsQuizActive(true);
       setShowQuizSelection(false);
 
-      localStorage.setItem('quizState', JSON.stringify(initialState));
+      const storageKey = getQuizStateKey(currentUser?.uid);
+      if (storageKey) {
+        localStorage.setItem(storageKey, JSON.stringify(initialState));
+      }
+      localStorage.removeItem(LEGACY_QUIZ_STATE_KEY);
     } catch (error) {
       console.error('Failed to start quiz from bundle:', error);
       alert('Nu s-au putut incarca intrebarile pentru aceasta grila.');
@@ -397,7 +441,11 @@ useEffect(() => {
       }
     }
 
-    localStorage.removeItem('quizState');
+    const storageKey = getQuizStateKey(currentUser?.uid);
+    if (storageKey) {
+      localStorage.removeItem(storageKey);
+    }
+    localStorage.removeItem(LEGACY_QUIZ_STATE_KEY);
   };
 
   const handleRestartQuiz = () => {
@@ -414,7 +462,11 @@ useEffect(() => {
     setActiveBundleMeta(null);
     setIsQuizActive(false);
     setShowQuizSelection(true);
-    localStorage.removeItem('quizState');
+    const storageKey = getQuizStateKey(currentUser?.uid);
+    if (storageKey) {
+      localStorage.removeItem(storageKey);
+    }
+    localStorage.removeItem(LEGACY_QUIZ_STATE_KEY);
   };
 
   if (!isStateLoaded) {

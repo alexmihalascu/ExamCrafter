@@ -19,16 +19,17 @@ const typography = {
 };
 
 const getGlassSurface = (mode) => ({
-  backgroundColor: mode === 'light' ? 'rgba(255, 255, 255, 0.75)' : 'rgba(18, 21, 40, 0.75)',
-  border: `1px solid ${mode === 'light' ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.12)'}`,
+  backgroundColor: mode === 'light' ? 'rgba(254, 254, 255, 0.85)' : 'rgba(18, 21, 40, 0.78)',
+  border: `1px solid ${mode === 'light' ? 'rgba(15,18,45,0.08)' : 'rgba(255,255,255,0.12)'}`,
   backdropFilter: 'blur(28px) saturate(180%)',
   boxShadow: mode === 'light'
-    ? '0 35px 70px rgba(9, 12, 32, 0.12)'
+    ? '0 25px 50px rgba(11, 14, 32, 0.12)'
     : '0 40px 80px rgba(0, 0, 0, 0.45)',
 });
 
 const buildComponents = (mode) => {
   const glass = getGlassSurface(mode);
+  const isLight = mode === 'light';
   return {
     MuiButton: {
       styleOverrides: {
@@ -37,16 +38,16 @@ const buildComponents = (mode) => {
           padding: '10px 28px',
         },
         contained: {
-          background: mode === 'light'
+          background: isLight
             ? 'linear-gradient(120deg, #4F5BFF, #8C4EFF)'
             : 'linear-gradient(120deg, #6E76FF, #A557FF)',
           color: '#fff',
           boxShadow: '0 20px 30px rgba(78, 109, 255, 0.25)',
         },
         outlined: {
-          borderColor: alpha('#FFFFFF', 0.3),
-          color: '#fff',
-          backgroundColor: alpha('#FFFFFF', 0.06),
+          borderColor: isLight ? alpha('#1B1F3B', 0.16) : alpha('#FFFFFF', 0.3),
+          color: isLight ? '#1B1F3B' : '#fff',
+          backgroundColor: isLight ? 'rgba(255,255,255,0.7)' : alpha('#FFFFFF', 0.06),
           backdropFilter: 'blur(12px)',
         },
       },
@@ -60,8 +61,9 @@ const buildComponents = (mode) => {
     MuiAppBar: {
       styleOverrides: {
         root: {
-          background: 'rgba(10, 12, 25, 0.8)',
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          background: isLight ? 'rgba(248, 249, 255, 0.9)' : 'rgba(10, 12, 25, 0.82)',
+          borderBottom: `1px solid ${isLight ? 'rgba(23,27,54,0.08)' : 'rgba(255,255,255,0.08)'}`,
+          color: isLight ? '#101325' : '#FFFFFF',
           backdropFilter: 'blur(20px)',
         },
       },
@@ -71,10 +73,16 @@ const buildComponents = (mode) => {
         root: {
           '& .MuiOutlinedInput-root': {
             borderRadius: 16,
-            backgroundColor: alpha('#FFFFFF', mode === 'light' ? 0.35 : 0.05),
+            backgroundColor: isLight ? 'rgba(255,255,255,0.85)' : alpha('#FFFFFF', 0.05),
             backdropFilter: 'blur(18px)',
+            '& input': {
+              color: isLight ? '#1B1F3B' : '#F8FAFF',
+            },
           },
-          '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
+          '& fieldset': { borderColor: isLight ? 'rgba(17,21,44,0.08)' : 'rgba(255,255,255,0.1)' },
+          '& .MuiInputLabel-root': {
+            color: isLight ? '#4B4F75' : '#A9B3DA',
+          },
         },
       },
     },
@@ -91,17 +99,17 @@ const lightPalette = {
   },
   secondary: {
     main: '#FF82C3',
-    light: '#FFC6E8',
+    light: '#FFD9EF',
     dark: '#D85298',
     contrastText: '#0B0F19',
   },
   background: {
-    default: '#EBEEF9',
-    paper: 'rgba(255,255,255,0.75)',
+    default: '#F3F5FF',
+    paper: 'rgba(255,255,255,0.85)',
   },
   text: {
     primary: '#0B0F19',
-    secondary: '#3E4A76',
+    secondary: '#4B4F75',
   },
   success: { main: '#3FE0B0' },
   error: { main: '#FF6B6B' },

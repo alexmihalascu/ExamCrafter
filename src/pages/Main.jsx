@@ -11,6 +11,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
@@ -78,6 +79,11 @@ const Main = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const [testStats, setTestStats] = useState({ totalTests: 0, passedTests: 0 });
+  const isDark = theme.palette.mode === 'dark';
+  const heroTextColor = isDark ? '#FFFFFF' : theme.palette.text.primary;
+  const heroSubtextColor = isDark ? 'rgba(255,255,255,0.85)' : theme.palette.text.secondary;
+  const metricBackground = isDark ? 'rgba(255,255,255,0.08)' : alpha(theme.palette.primary.main, 0.08);
+  const metricBorder = isDark ? 'rgba(255,255,255,0.08)' : alpha(theme.palette.primary.main, 0.25);
 
   useEffect(() => {
     const fetchTestStats = async () => {
@@ -144,8 +150,8 @@ const Main = () => {
                 overflow: 'hidden',
                 p: { xs: 4, md: 6 },
                 borderRadius: 5,
-                border: '1px solid rgba(255,255,255,0.12)',
-                boxShadow: '0 40px 90px rgba(3,4,12,0.55)',
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(18,21,44,0.12)'}`,
+                boxShadow: isDark ? '0 40px 90px rgba(3,4,12,0.55)' : '0 35px 70px rgba(10,14,35,0.1)',
                 background:
                   theme.palette.mode === 'dark'
                     ? 'linear-gradient(135deg, rgba(7,10,22,0.95), rgba(16,19,40,0.9))'
@@ -177,16 +183,16 @@ const Main = () => {
                         height: 120,
                         margin: '0 auto',
                         mb: 3,
-                        border: '4px solid rgba(255,255,255,0.3)',
-                        boxShadow: '0 30px 50px rgba(0,0,0,0.45)',
+                        border: isDark ? '4px solid rgba(255,255,255,0.3)' : '4px solid rgba(255,255,255,0.8)',
+                        boxShadow: '0 30px 50px rgba(0,0,0,0.25)',
                       }}
                     />
                   </motion.div>
 
-                  <Typography variant="h3" fontWeight="bold" color="white" gutterBottom>
+                  <Typography variant="h3" fontWeight="bold" sx={{ color: heroTextColor }} gutterBottom>
                     Buna, {currentUser.displayName?.split(' ')[0] || 'Explorator'}!
                   </Typography>
-                  <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.85)', mb: 4 }}>
+                  <Typography variant="h6" sx={{ color: heroSubtextColor, mb: 4 }}>
                     Esti in controlul dataset-urilor tale inteligente.
                   </Typography>
 
@@ -196,14 +202,14 @@ const Main = () => {
                         sx={{
                           p: 3,
                           borderRadius: 4,
-                          background: 'rgba(255,255,255,0.08)',
-                          border: '1px solid rgba(255,255,255,0.08)',
+                          background: metricBackground,
+                          border: `1px solid ${metricBorder}`,
                         }}
                       >
-                        <Typography variant="h4" color="white" fontWeight="bold">
+                        <Typography variant="h4" fontWeight="bold" sx={{ color: heroTextColor }}>
                           <CountUp end={testStats.totalTests} duration={2} />
                         </Typography>
-                        <Typography color="rgba(255,255,255,0.8)">Teste efectuate</Typography>
+                        <Typography sx={{ color: heroSubtextColor }}>Teste efectuate</Typography>
                       </Box>
                     </Grid>
                     <Grid item xs={12} sm={6}>
@@ -211,14 +217,14 @@ const Main = () => {
                         sx={{
                           p: 3,
                           borderRadius: 4,
-                          background: 'rgba(255,255,255,0.08)',
-                          border: '1px solid rgba(255,255,255,0.08)',
+                          background: metricBackground,
+                          border: `1px solid ${metricBorder}`,
                         }}
                       >
-                        <Typography variant="h4" color="white" fontWeight="bold">
+                        <Typography variant="h4" fontWeight="bold" sx={{ color: heroTextColor }}>
                           <CountUp end={testStats.passedTests} duration={2} />
                         </Typography>
-                        <Typography color="rgba(255,255,255,0.8)">Teste promovate</Typography>
+                        <Typography sx={{ color: heroSubtextColor }}>Teste promovate</Typography>
                       </Box>
                     </Grid>
                   </Grid>

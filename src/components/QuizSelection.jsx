@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   Alert,
   Box,
@@ -33,12 +33,13 @@ const QuizSelection = ({
   onStartBundle,
   onManageSets,
 }) => {
-  const [view, setView] = useState('sets');
+  const [view, setView] = useState('bundles');
   const [selectedSetId, setSelectedSetId] = useState('');
   const [selectedBundleId, setSelectedBundleId] = useState('');
   const [questionCount, setQuestionCount] = useState(DEFAULT_QUESTION_COUNT);
   const [bundleQuestionCount, setBundleQuestionCount] = useState(DEFAULT_QUESTION_COUNT);
   const [randomize, setRandomize] = useState(true);
+  const userViewChangedRef = useRef(false);
 
   const categorizedSets = useMemo(
     () => ({
@@ -54,6 +55,15 @@ const QuizSelection = ({
       setSelectedSetId(questionSets[0].id);
     }
   }, [questionSets, selectedSetId]);
+
+  useEffect(() => {
+    if (userViewChangedRef.current) return;
+    if (quizBundles.length) {
+      setView('bundles');
+    } else if (!quizBundles.length && questionSets.length) {
+      setView('sets');
+    }
+  }, [quizBundles.length, questionSets.length]);
 
   useEffect(() => {
     if (!selectedBundleId && quizBundles.length) {
@@ -377,7 +387,10 @@ const QuizSelection = ({
 
             <Tabs
               value={view}
-              onChange={(_, value) => setView(value)}
+              onChange={(_, value) => {
+                userViewChangedRef.current = true;
+                setView(value);
+              }}
               variant="scrollable"
               scrollButtons="auto"
             >

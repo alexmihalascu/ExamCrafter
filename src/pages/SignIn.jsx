@@ -106,7 +106,7 @@ const SignIn = () => {
                 </Typography>
                 <Typography variant="body1" color="text.secondary">
                   Contul tau Google devine cheia unui ecosistem de chestionare premium cu estetica
-                  2025. Un singur click pentru a sincroniza avatar, preferinte si acces la
+                  moderna. Un singur click pentru a sincroniza avatar, preferinte si acces la
                   dataset-urile partajate.
                 </Typography>
 

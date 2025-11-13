@@ -5,6 +5,7 @@ import {
   CircularProgress, Alert, useTheme, Pagination, Select, MenuItem,
   IconButton, Tooltip, Stack, LinearProgress, Divider, Chip
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import Chart from 'react-apexcharts';
@@ -106,15 +107,21 @@ const StatCard = ({ title, value, subtitle, color }) => {
 // Chart Card Component
 const ChartCard = ({ title, children }) => {
   const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  const background = isDark
+    ? 'linear-gradient(135deg, rgba(9,12,26,0.95), rgba(5,9,20,0.9))'
+    : 'linear-gradient(135deg, rgba(255,255,255,0.98), rgba(244,247,255,0.95))';
+  const borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(19,24,45,0.08)';
   return (
     <Paper
       elevation={0}
       sx={{
         p: 3,
         height: '100%',
-        background: theme.palette.background.paper,
-        border: `1px solid ${theme.palette.divider}`,
-        borderRadius: 2
+        background,
+        border: `1px solid ${borderColor}`,
+        borderRadius: 2,
+        color: theme.palette.text.primary,
       }}
     >
       <Typography variant="h6" gutterBottom>{title}</Typography>
@@ -212,6 +219,10 @@ const History = () => {
         legend: {
           position: 'bottom',
           labels: { colors: theme.palette.text.primary }
+        },
+        tooltip: {
+          theme: theme.palette.mode,
+          fillSeriesColor: false
         }
       },
       series: [stats.correctAnswers, stats.totalQuestions - stats.correctAnswers]
@@ -232,6 +243,10 @@ const History = () => {
         },
         grid: {
           borderColor: theme.palette.divider
+        },
+        tooltip: {
+          theme: theme.palette.mode,
+          fillSeriesColor: false
         }
       },
       series: [{
@@ -504,10 +519,13 @@ const History = () => {
   PaperProps={{
     elevation: 0,
     sx: { 
-      borderRadius: 2,
-      background: `linear-gradient(135deg, 
-        ${theme.palette.background.paper} 0%, 
-        ${theme.palette.background.default} 100%)`
+      borderRadius: 3,
+      border: `1px solid ${theme.palette.divider}`,
+      background: theme.palette.mode === 'dark'
+        ? 'linear-gradient(135deg, rgba(7,11,24,0.95), rgba(13,18,34,0.92))'
+        : 'linear-gradient(135deg, rgba(255,255,255,0.98), rgba(247,249,255,0.94))',
+      color: theme.palette.text.primary,
+      backdropFilter: 'blur(20px)'
     }
   }}
 >
@@ -546,7 +564,9 @@ const History = () => {
               sx={{ 
                 p: 2,
                 bgcolor: selectedEntry.passed ? 'success.main' : 'error.main',
-                color: 'white',
+                color: theme.palette.getContrastText(
+                  selectedEntry.passed ? theme.palette.success.main : theme.palette.error.main
+                ),
                 borderRadius: 2
               }}
             >
@@ -581,7 +601,7 @@ const History = () => {
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                   Statistici Test
                 </Typography>
-                <Box sx={{ bgcolor: 'background.paper', p: 2, borderRadius: 2 }}>
+                <Box sx={{ bgcolor: theme.palette.background.paper, p: 2, borderRadius: 2 }}>
                   <Grid container spacing={2}>
                     <Grid item xs={6}>
                       <Typography variant="body2" color="text.secondary">Total Întrebări</Typography>
@@ -603,7 +623,7 @@ const History = () => {
       <Typography variant="subtitle2" color="text.secondary" gutterBottom>
         Data și Ora
       </Typography>
-      <Box sx={{ bgcolor: 'background.paper', p: 2, borderRadius: 2 }}>
+      <Box sx={{ bgcolor: theme.palette.background.paper, p: 2, borderRadius: 2 }}>
         <Grid container spacing={2}>
           <Grid item xs={6}>
             <Typography variant="body2" color="text.secondary">Data Test</Typography>
@@ -635,7 +655,7 @@ const History = () => {
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
               Progres și Performanță
             </Typography>
-            <Box sx={{ bgcolor: 'background.paper', p: 3, borderRadius: 2 }}>
+            <Box sx={{ bgcolor: theme.palette.background.paper, p: 3, borderRadius: 2 }}>
               <Stack spacing={3}>
                 <Box>
                   <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
@@ -657,7 +677,7 @@ const History = () => {
                     sx={{
                       height: 8,
                       borderRadius: 4,
-                      bgcolor: theme.palette.grey[200],
+                      bgcolor: theme.palette.mode === 'dark' ? alpha('#FFFFFF', 0.12) : theme.palette.grey[200],
                       '& .MuiLinearProgress-bar': {
                         borderRadius: 4,
                         bgcolor: selectedEntry.passed ? 'success.main' : 'error.main'

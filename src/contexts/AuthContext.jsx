@@ -31,6 +31,7 @@ export const AuthProvider = ({ children }) => {
     const userDoc = await getDoc(userDocRef);
     const baseProfile = {
       email: user.email,
+      emailLowercase: user.email?.toLowerCase() || '',
       displayName: user.displayName || '',
       photoURL: user.photoURL || '',
       updatedAt: new Date().toISOString(),

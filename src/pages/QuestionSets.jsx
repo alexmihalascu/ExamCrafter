@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import {
   Alert,
   Box,
@@ -52,6 +52,9 @@ import {
   increment,
   query as firestoreQuery,
   orderBy,
+  startAt,
+  endAt,
+  limit,
   serverTimestamp,
   Timestamp,
   updateDoc,
@@ -101,6 +104,9 @@ const QuestionSets = () => {
 
   const [manualQuestion, setManualQuestion] = useState(createManualQuestionState());
   const [shareEmail, setShareEmail] = useState('');
+  const [shareSuggestions, setShareSuggestions] = useState([]);
+  const [shareSearchLoading, setShareSearchLoading] = useState(false);
+  const shareSearchTimeoutRef = useRef(null);
   const [importing, setImporting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [quizBundles, setQuizBundles] = useState([]);
@@ -115,6 +121,10 @@ const QuestionSets = () => {
   const [bundlesLoading, setBundlesLoading] = useState(true);
 
   const isOwner = selectedSet && currentUser?.uid === selectedSet.ownerId;
+  const sharedEmails = useMemo(
+    () => new Set((selectedSet?.sharedWith || []).map((email) => email.toLowerCase())),
+    [selectedSet]
+  );
 
   const resetManualQuestion = () => {
     setManualQuestion(createManualQuestionState());
@@ -211,6 +221,81 @@ const QuestionSets = () => {
     setSelectedSet(fallback);
     setSelectedSetId(fallback?.id ?? null);
   }, [questionSets, selectedSetId]);
+
+  useEffect(() => {
+    if (!isOwner) {
+      setShareSuggestions([]);
+      return;
+    }
+
+    const rawValue = shareEmail.trim();
+    if (rawValue.length < 2) {
+      setShareSuggestions([]);
+      return;
+    }
+
+    if (shareSearchTimeoutRef.current) {
+      clearTimeout(shareSearchTimeoutRef.current);
+    }
+
+    shareSearchTimeoutRef.current = setTimeout(async () => {
+      setShareSearchLoading(true);
+      try {
+        const usersRef = collection(db, 'users');
+        const normalized = rawValue.toLowerCase();
+        let snapshot;
+
+        try {
+          snapshot = await getDocs(
+            firestoreQuery(
+              usersRef,
+              orderBy('emailLowercase'),
+              startAt(normalized),
+              endAt(`${normalized}\uf8ff`),
+              limit(5)
+            )
+          );
+        } catch {
+          snapshot = await getDocs(
+            firestoreQuery(
+              usersRef,
+              orderBy('email'),
+              startAt(rawValue),
+              endAt(`${rawValue}\uf8ff`),
+              limit(5)
+            )
+          );
+        }
+
+        const results = snapshot.docs
+          .map((docSnap) => {
+            const data = docSnap.data();
+            const emailValue = (data.email || '').trim();
+            return {
+              id: docSnap.id,
+              email: emailValue,
+              emailLowercase: emailValue.toLowerCase(),
+              displayName: data.displayName || '',
+              photoURL: data.photoURL || '',
+            };
+          })
+          .filter((user) => user.email && user.emailLowercase.includes(normalized));
+
+        setShareSuggestions(results);
+      } catch (error) {
+        console.error('Failed to search users for sharing:', error);
+        setShareSuggestions([]);
+      } finally {
+        setShareSearchLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      if (shareSearchTimeoutRef.current) {
+        clearTimeout(shareSearchTimeoutRef.current);
+      }
+    };
+  }, [shareEmail, isOwner, selectedSet]);
 
   const categorizedSets = useMemo(() => {
     return {
@@ -617,9 +702,16 @@ const handleFileImport = async (event) => {
     triggerDownload(blob, 'examcrafter-template.xlsx');
   };
 
-  const handleShareAdd = async () => {
-    if (!selectedSet || !shareEmail.trim()) return;
-    const email = shareEmail.trim().toLowerCase();
+  const handleShareAdd = async (emailOverride) => {
+    if (!selectedSet) return;
+    const rawValue = (emailOverride ?? shareEmail).trim();
+    if (!rawValue) return;
+    const email = rawValue.toLowerCase();
+
+    if (sharedEmails.has(email)) {
+      handleSnackbar('Utilizatorul are deja acces.', 'info');
+      return;
+    }
 
     try {
       await updateDoc(doc(db, 'questionSets', selectedSet.id), {
@@ -627,6 +719,7 @@ const handleFileImport = async (event) => {
         updatedAt: serverTimestamp(),
       });
       setShareEmail('');
+      setShareSuggestions([]);
       handleSnackbar(`Acces oferit catre ${email}.`);
       await fetchQuestionSets();
     } catch (error) {
@@ -1101,6 +1194,58 @@ const handleFileImport = async (event) => {
                           Adauga
                         </Button>
                       </Stack>
+                      {isOwner && shareEmail.trim().length >= 2 && (
+                        <Paper variant="outlined" sx={{ mt: 1, p: 2, borderRadius: 2 }}>
+                          {shareSearchLoading ? (
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <CircularProgress size={18} />
+                              <Typography variant="caption" color="text.secondary">
+                                Caut utilizatori...
+                              </Typography>
+                            </Stack>
+                          ) : shareSuggestions.length ? (
+                            <Stack spacing={1.5}>
+                              {shareSuggestions.map((user) => {
+                                const normalized = user.emailLowercase;
+                                const alreadyShared =
+                                  sharedEmails.has(normalized) ||
+                                  normalized === (selectedSet.ownerEmail || '').toLowerCase() ||
+                                  normalized === currentUser?.email?.toLowerCase();
+                                return (
+                                  <Stack
+                                    key={`${user.id}-${user.email}`}
+                                    direction={{ xs: 'column', sm: 'row' }}
+                                    spacing={1}
+                                    alignItems={{ xs: 'flex-start', sm: 'center' }}
+                                    justifyContent="space-between"
+                                  >
+                                    <Box>
+                                      <Typography variant="subtitle2">
+                                        {user.displayName || 'Utilizator'}
+                                      </Typography>
+                                      <Typography variant="caption" color="text.secondary">
+                                        {user.email}
+                                      </Typography>
+                                    </Box>
+                                    <Button
+                                      size="small"
+                                      variant="outlined"
+                                      disabled={alreadyShared}
+                                      onClick={() => handleShareAdd(user.email)}
+                                    >
+                                      {alreadyShared ? 'Deja are acces' : 'Ofera acces'}
+                                    </Button>
+                                  </Stack>
+                                );
+                              })}
+                            </Stack>
+                          ) : (
+                            <Typography variant="body2" color="text.secondary">
+                              Nu am gasit utilizatori pentru "{shareEmail.trim()}".
+                            </Typography>
+                          )}
+                        </Paper>
+                      )}
                       <Stack direction="row" spacing={1} flexWrap="wrap">
                         {(selectedSet.sharedWith || []).length ? (
                           selectedSet.sharedWith.map((email) => (
