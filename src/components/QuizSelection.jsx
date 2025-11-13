@@ -1,267 +1,398 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
-  Container, Paper, Typography, MenuItem, Select, Button, Box,
-  ListSubheader, useTheme, useMediaQuery
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Container,
+  Divider,
+  FormControlLabel,
+  Grid,
+  Paper,
+  Slider,
+  Stack,
+  Switch,
+  Tabs,
+  Tab,
+  Typography,
 } from '@mui/material';
-import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
-import { db } from '../firebase/firebaseConfig';
-import { collection, query, where, getDocs, limit as firestoreLimit } from 'firebase/firestore';
+import { motion } from 'framer-motion';
 
-const categories = [
-  {
-    group: 'General',
-    items: [
-      { value: 'all', label: 'Aleatoare (45 întrebări din toate categoriile)', icon: 'mdi:shuffle' }
-    ]
-  },
-  {
-    group: 'MS ACCESS',
-    items: [
-      { value: 'category1', label: 'Teste grilă rezolvate', icon: 'mdi:database-check' },
-      { value: 'category2', label: 'Teste grilă propuse spre rezolvare', icon: 'mdi:database-edit' }
-    ]
-  },
-  {
-    group: 'ORACLE SQL',
-    items: [
-      { value: 'category3', label: 'Teste grilă rezolvate', icon: 'mdi:database-check' },
-      { value: 'category4', label: 'Teste grilă propuse spre rezolvare', icon: 'mdi:database-edit' }
-    ]
-  },
-  {
-    group: 'Sisteme Informatice',
-    items: [
-      { value: 'category5', label: 'Teste grilă rezolvate', icon: 'mdi:file-check' },
-      { value: 'category6', label: 'Teste grilă propuse spre rezolvare', icon: 'mdi:file-edit' }
-    ]
-  },
-  {
-    group: 'Arhitectura Calculatoarelor',
-    items: [
-      { value: 'category7', label: 'Teste grilă rezolvate', icon: 'mdi:desktop-classic' },
-      { value: 'category8', label: 'Teste grilă propuse spre rezolvare', icon: 'mdi:desktop-classic' }
-    ]
-  },
-  {
-    group: 'Programare C#',
-    items: [
-      { value: 'category9', label: 'Teste grilă rezolvate', icon: 'mdi:language-csharp' },
-      { value: 'category10', label: 'Teste grilă propuse spre rezolvare', icon: 'mdi:language-csharp' }
-    ]
-  }
-];
+const DEFAULT_QUESTION_COUNT = 20;
 
-const QuizSelection = React.memo(({ onSelect }) => {
-  const [selectedOption, setSelectedOption] = useState('');
-  const [loading, setLoading] = useState(false); // New loading state
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+const QuizSelection = ({
+  questionSets,
+  quizBundles = [],
+  loading,
+  bundlesLoading = false,
+  onStart,
+  onStartBundle,
+  onManageSets,
+}) => {
+  const [view, setView] = useState('sets');
+  const [selectedSetId, setSelectedSetId] = useState('');
+  const [selectedBundleId, setSelectedBundleId] = useState('');
+  const [questionCount, setQuestionCount] = useState(DEFAULT_QUESTION_COUNT);
+  const [bundleQuestionCount, setBundleQuestionCount] = useState(DEFAULT_QUESTION_COUNT);
+  const [randomize, setRandomize] = useState(true);
 
-  const handleChange = (event) => {
-    setSelectedOption(event.target.value);
+  const categorizedSets = useMemo(
+    () => ({
+      owned: questionSets.filter((set) => set.access === 'owned'),
+      shared: questionSets.filter((set) => set.access === 'shared'),
+      public: questionSets.filter((set) => set.access === 'public'),
+    }),
+    [questionSets]
+  );
+
+  useEffect(() => {
+    if (!selectedSetId && questionSets.length) {
+      setSelectedSetId(questionSets[0].id);
+    }
+  }, [questionSets, selectedSetId]);
+
+  useEffect(() => {
+    if (!selectedBundleId && quizBundles.length) {
+      const firstBundle = quizBundles[0];
+      setSelectedBundleId(firstBundle.id);
+      const cap = Math.max(
+        1,
+        firstBundle.totalAvailableQuestions || firstBundle.questionCount || DEFAULT_QUESTION_COUNT
+      );
+      setBundleQuestionCount(Math.min(firstBundle.questionCount || DEFAULT_QUESTION_COUNT, cap));
+    }
+  }, [quizBundles, selectedBundleId]);
+
+  const selectedSet = useMemo(
+    () => questionSets.find((set) => set.id === selectedSetId),
+    [questionSets, selectedSetId]
+  );
+
+  const selectedBundle = useMemo(
+    () => quizBundles.find((bundle) => bundle.id === selectedBundleId),
+    [quizBundles, selectedBundleId]
+  );
+
+  useEffect(() => {
+    if (selectedSet) {
+      const cap = Math.max(1, selectedSet.questionCount || DEFAULT_QUESTION_COUNT);
+      setQuestionCount((prev) => Math.min(prev || DEFAULT_QUESTION_COUNT, cap));
+    }
+  }, [selectedSet]);
+
+  useEffect(() => {
+    if (selectedBundle) {
+      const cap = Math.max(
+        1,
+        selectedBundle.totalAvailableQuestions || selectedBundle.questionCount || DEFAULT_QUESTION_COUNT
+      );
+      setBundleQuestionCount((prev) => Math.min(prev || DEFAULT_QUESTION_COUNT, cap));
+    }
+  }, [selectedBundle]);
+
+  const canStartSet = !!selectedSet && (selectedSet.questionCount || 0) > 0;
+  const bundleCap = selectedBundle
+    ? Math.max(
+        1,
+        selectedBundle.totalAvailableQuestions || selectedBundle.questionCount || DEFAULT_QUESTION_COUNT
+      )
+    : 0;
+  const canStartBundle = !!selectedBundle && bundleCap > 0;
+
+  const handleStartSet = () => {
+    if (!selectedSet || !onStart) return;
+    const cap = Math.max(1, selectedSet.questionCount || DEFAULT_QUESTION_COUNT);
+    onStart({
+      setId: selectedSet.id,
+      questionCount: Math.min(questionCount, cap),
+      randomize,
+    });
   };
 
-  const shuffleArray = (array) => {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
+  const handleStartBundle = () => {
+    if (!selectedBundle || !onStartBundle) return;
+    const cap = bundleCap || DEFAULT_QUESTION_COUNT;
+    onStartBundle({
+      bundle: selectedBundle,
+      questionCount: Math.min(bundleQuestionCount, cap),
+      randomize,
+    });
   };
 
-  const handleStartQuiz = async () => {
-    if (selectedOption) {
-      setLoading(true);
-      try {
-        // Fetch questions based on the selected category
-        let data = [];
-        const questionsRef = collection(db, 'intrebari');
+  const renderSetCard = (set) => {
+    const isSelected = selectedSetId === set.id;
+    return (
+      <Grid item xs={12} md={6} key={set.id}>
+        <Card
+          component={motion.div}
+          whileHover={{ scale: 1.01 }}
+          onClick={() => setSelectedSetId(set.id)}
+          sx={{
+            cursor: 'pointer',
+            borderRadius: 3,
+            border: isSelected ? `2px solid` : '1px solid',
+            borderColor: isSelected ? 'primary.main' : 'divider',
+            boxShadow: isSelected ? 6 : 1,
+            transition: 'all 0.2s ease',
+          }}
+        >
+          <CardContent>
+            <Stack spacing={1.5}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="h6" fontWeight={600}>
+                  {set.name}
+                </Typography>
+                <Chip
+                  label={
+                    set.access === 'owned'
+                      ? 'Set personal'
+                      : set.access === 'shared'
+                      ? 'Partajat'
+                      : 'Public'
+                  }
+                  size="small"
+                  color={set.access === 'public' ? 'success' : 'default'}
+                />
+              </Stack>
+              <Typography variant="body2" color="text.secondary">
+                {set.description || 'Fara descriere'}
+              </Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                <Chip icon={<Icon icon="mdi:playlist-check" />} label={`${set.questionCount || 0} intrebari`} />
+                {set.tags?.slice(0, 3).map((tag) => (
+                  <Chip key={tag} label={tag} variant="outlined" size="small" />
+                ))}
+              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
+      </Grid>
+    );
+  };
 
-        if (selectedOption === 'all') {
-          // Get all questions and randomly select 45
-          const querySnapshot = await getDocs(questionsRef);
-          const allQuestions = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          data = shuffleArray(allQuestions).slice(0, 45);
-        } else {
-          // Get questions by category
-          const categoryMap = {
-            category1: 'MS ACCESS - Rezolvate',
-            category2: 'MS ACCESS - Propuse',
-            category3: 'ORACLE SQL - Rezolvate',
-            category4: 'ORACLE SQL - Propuse',
-            category5: 'Sisteme Informatice - Rezolvate',
-            category6: 'Sisteme Informatice - Propuse',
-            category7: 'Arhitectura Calculatoarelor - Rezolvate',
-            category8: 'Arhitectura Calculatoarelor - Propuse',
-            category9: 'Programare C# - Rezolvate',
-            category10: 'Programare C# - Propuse',
-          };
+  const renderBundleCard = (bundle) => {
+    const isSelected = selectedBundleId === bundle.id;
+    return (
+      <Grid item xs={12} md={6} key={bundle.id}>
+        <Card
+          component={motion.div}
+          whileHover={{ scale: 1.01 }}
+          onClick={() => setSelectedBundleId(bundle.id)}
+          sx={{
+            cursor: 'pointer',
+            borderRadius: 3,
+            border: isSelected ? `2px solid` : '1px solid',
+            borderColor: isSelected ? 'primary.main' : 'divider',
+            boxShadow: isSelected ? 6 : 1,
+            transition: 'all 0.2s ease',
+          }}
+        >
+          <CardContent>
+            <Stack spacing={1.5}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="h6" fontWeight={600}>
+                  {bundle.name}
+                </Typography>
+                <Chip
+                  label={bundle.visibility === 'public' ? 'Public' : 'Privat'}
+                  size="small"
+                  color={bundle.visibility === 'public' ? 'success' : 'default'}
+                />
+              </Stack>
+              <Typography variant="body2" color="text.secondary">
+                {bundle.description || 'Fara descriere'}
+              </Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                <Chip icon={<Icon icon="mdi:playlist-check" />} label={`${bundle.questionCount || 0} intrebari`} />
+                <Chip icon={<Icon icon="mdi:folder-table" />} label={`${bundle.setIds?.length || 0} dataset-uri`} />
+              </Stack>
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                {(bundle.setSummaries || []).slice(0, 4).map((set) => (
+                  <Chip key={set.id} label={set.name} size="small" variant="outlined" />
+                ))}
+                {(bundle.setSummaries || []).length > 4 && (
+                  <Chip label={`+${bundle.setSummaries.length - 4}`} size="small" variant="outlined" />
+                )}
+              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
+      </Grid>
+    );
+  };
 
-          const categoryName = categoryMap[selectedOption];
-          if (categoryName) {
-            const q = query(questionsRef, where('categorie', '==', categoryName));
-            const querySnapshot = await getDocs(q);
-            const categoryQuestions = querySnapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data()
-            }));
-            data = shuffleArray(categoryQuestions).slice(0, 40);
-          } else {
-            // Fallback: get random questions
-            const querySnapshot = await getDocs(questionsRef);
-            const allQuestions = querySnapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data()
-            }));
-            data = shuffleArray(allQuestions).slice(0, 40);
-          }
-        }
-
-        if (data.length === 0) {
-          alert('Nu există întrebări disponibile pentru această categorie. Te rog să contactezi administratorul.');
-          setLoading(false);
-          return;
-        }
-
-        // Save quiz state and questions to localStorage
-        const initialQuizState = {
-          quizType: selectedOption,
-          questions: data,
-          currentQuestionIndex: 0,
-          answers: {},
-          score: 0,
-          incorrectAnswers: 0,
-          timer: 60,
-          finished: false,
-          passed: false,
-          answerSubmitted: false,
-        };
-        localStorage.setItem('quizState', JSON.stringify(initialQuizState));
-
-        // Proceed to the quiz
-        onSelect(selectedOption);
-      } catch (error) {
-        console.error('Error fetching questions:', error);
-        alert('A apărut o eroare la încărcarea întrebărilor.');
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      alert('Te rog să selectezi un tip de chestionar.');
+  const renderSetsView = () => {
+    if (loading) {
+      return (
+        <Box display="flex" justifyContent="center" py={4}>
+          <CircularProgress />
+        </Box>
+      );
     }
+
+    if (!questionSets.length) {
+      return (
+        <Alert severity="info">
+          Nu ai inca acces la dataset-uri. Creeaza-le sau solicita acces din zona de seturi.
+        </Alert>
+      );
+    }
+
+    const maxQuestions = Math.max(1, selectedSet?.questionCount || DEFAULT_QUESTION_COUNT);
+
+    return (
+      <>
+        <Grid container spacing={3}>
+          {questionSets.map(renderSetCard)}
+        </Grid>
+        {selectedSet && (
+          <Box>
+            <Typography variant="caption" color="text.secondary">
+              Selecteaza cate intrebari sa contina chestionarul (maxim {maxQuestions})
+            </Typography>
+            <Slider
+              value={Math.min(questionCount, maxQuestions)}
+              onChange={(_, value) => setQuestionCount(value)}
+              min={1}
+              max={maxQuestions}
+              step={1}
+              valueLabelDisplay="auto"
+              sx={{ mt: 2 }}
+            />
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center" mt={2}>
+              <FormControlLabel
+                control={<Switch checked={randomize} onChange={(e) => setRandomize(e.target.checked)} />}
+                label="Amesteca ordinea intrebarilor"
+              />
+              <Box flexGrow={1} />
+              <Button
+                variant="contained"
+                size="large"
+                onClick={handleStartSet}
+                disabled={!canStartSet}
+              >
+                Incepe testul
+              </Button>
+            </Stack>
+          </Box>
+        )}
+      </>
+    );
+  };
+
+  const renderBundlesView = () => {
+    if (bundlesLoading) {
+      return (
+        <Box display="flex" justifyContent="center" py={4}>
+          <CircularProgress />
+        </Box>
+      );
+    }
+
+    if (!quizBundles.length) {
+      return (
+        <Alert severity="info">
+          Nu exista inca grile compuse. Creeaza-le din zona de seturi si revin-o aici.
+        </Alert>
+      );
+    }
+
+    const max = Math.max(1, bundleCap || DEFAULT_QUESTION_COUNT);
+
+    return (
+      <>
+        <Grid container spacing={3}>
+          {quizBundles.map(renderBundleCard)}
+        </Grid>
+        {selectedBundle && (
+          <Box>
+            <Typography variant="caption" color="text.secondary">
+              Selecteaza cate intrebari sa folosesti din totalul disponibil ({max})
+            </Typography>
+            <Slider
+              value={Math.min(bundleQuestionCount, max)}
+              onChange={(_, value) => setBundleQuestionCount(value)}
+              min={1}
+              max={max}
+              step={1}
+              valueLabelDisplay="auto"
+              sx={{ mt: 2 }}
+            />
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center" mt={2}>
+              <FormControlLabel
+                control={<Switch checked={randomize} onChange={(e) => setRandomize(e.target.checked)} />}
+                label="Amesteca ordinea intrebarilor"
+              />
+              <Box flexGrow={1} />
+              <Button
+                variant="contained"
+                size="large"
+                onClick={handleStartBundle}
+                disabled={!canStartBundle}
+              >
+                Incepe grila
+              </Button>
+            </Stack>
+          </Box>
+        )}
+      </>
+    );
   };
 
   return (
-    <Container maxWidth="sm">
-      <motion.div>
-        <Paper 
+    <Container maxWidth="lg">
+      <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+        <Paper
           elevation={0}
-          sx={{ 
-            p: isMobile ? 10 : 4,
-            textAlign: 'center',
-            background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
-            border: `1px solid ${theme.palette.divider}`,
-            borderRadius: 2
+          sx={{
+            p: { xs: 3, md: 5 },
+            borderRadius: 4,
+            border: `1px solid`,
+            borderColor: 'divider',
           }}
         >
-          <Typography 
-            variant="h4" 
-            gutterBottom
-            sx={{
-              fontWeight: 700,
-              background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-              backgroundClip: 'text',
-              textFillColor: 'transparent',
-              mb: 4
-            }}
-          >
-            Selectează Tipul de Chestionar
-          </Typography>
+          <Stack spacing={3}>
+            <Box>
+              <Typography variant="h4" fontWeight={700}>
+                Selecteaza sursa chestionarului
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Poti folosi dataset-uri individuale sau combinatii salvate (grile compuse).
+              </Typography>
+            </Box>
 
-          <Select
-            value={selectedOption}
-            onChange={handleChange}
-            displayEmpty
-            fullWidth
-            sx={{
-              '& .MuiSelect-select': {
-                py: 1.5,
-              },
-              '& .MuiMenuItem-root': {
-                py: 1,
-                px: 2,
-              }
-            }}
-          >
-            <MenuItem value="" disabled>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}>
-                <Icon icon="mdi:playlist-check" width={24} height={24} />
-                <Typography>Selectează categoria dorită</Typography>
-              </Box>
-            </MenuItem>
-
-            {categories.map((category) => [
-              <ListSubheader 
-                key={category.group}
-                sx={{
-                  background: theme.palette.background.paper,
-                  color: theme.palette.primary.main,
-                  fontWeight: 600
-                }}
-              >
-                {category.group}
-              </ListSubheader>,
-              category.items.map((item) => (
-                <MenuItem 
-                  key={item.value} 
-                  value={item.value}
-                  sx={{
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      backgroundColor: `${theme.palette.primary.main}15`,
-                      transform: 'translateX(8px)'
-                    }
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Icon icon={item.icon} width={24} height={24} />
-                    <Typography>{item.label}</Typography>
-                  </Box>
-                </MenuItem>
-              ))
-            ])}
-          </Select>
-
-          <Box mt={4}>
-            <motion.div>
-              <Button 
-                variant="contained" 
-                color="primary" 
-                onClick={handleStartQuiz}
-                size="large"
-                startIcon={<Icon icon="mdi:play" />}
-                sx={{
-                  px: 4,
-                  py: 1,
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  fontWeight: 600
-                }}
-                disabled={loading} // Disable button when loading
-              >
-                {loading ? 'Se încarcă...' : 'Începe Chestionarul'}
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'flex-start', md: 'center' }}>
+              <Chip label={`Seturile mele (${categorizedSets.owned.length})`} />
+              <Chip label={`Partajate (${categorizedSets.shared.length})`} />
+              <Chip label={`Publice (${categorizedSets.public.length})`} />
+              <Box flexGrow={1} />
+              <Button variant="outlined" onClick={onManageSets} startIcon={<Icon icon="mdi:open-in-new" />}>
+                Gestioneaza seturi
               </Button>
-            </motion.div>
-          </Box>
+            </Stack>
+
+            <Tabs
+              value={view}
+              onChange={(_, value) => setView(value)}
+              variant="scrollable"
+              scrollButtons="auto"
+            >
+              <Tab label="Dataset-uri" value="sets" />
+              <Tab label="Grile compuse" value="bundles" />
+            </Tabs>
+
+            <Divider />
+
+            {view === 'sets' ? renderSetsView() : renderBundlesView()}
+          </Stack>
         </Paper>
       </motion.div>
     </Container>
   );
-});
+};
 
-export default QuizSelection;
+export default React.memo(QuizSelection);

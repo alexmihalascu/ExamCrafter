@@ -14,9 +14,31 @@ import Chart from 'react-apexcharts';
 import CountUp from 'react-countup';
 import { useTheme } from '@mui/material/styles';
 
-const QuizResults = ({ score, totalQuestions, onRestart, passed }) => {
+const accessMap = {
+  owned: 'Set personal',
+  shared: 'Set partajat',
+  public: 'Set public',
+};
+
+const QuizResults = ({
+  score,
+  totalQuestions,
+  onRestart,
+  passed,
+  questionSetName,
+  questionSetAccess,
+  questionSetVisibility,
+  questionBundleName,
+  questionBundleAccess,
+  questionBundleVisibility,
+}) => {
   const theme = useTheme();
   const incorrectAnswers = totalQuestions - score;
+  const accessLabel = questionSetAccess ? accessMap[questionSetAccess] || 'Set personal' : null;
+  const visibilityLabel = questionSetVisibility === 'public' ? 'Vizibilitate publică' : 'Vizibilitate privată';
+  const bundleAccessLabel = questionBundleAccess ? accessMap[questionBundleAccess] || 'Grilă personală' : null;
+  const bundleVisibilityLabel =
+    questionBundleVisibility === 'public' ? 'Vizibilitate publică' : 'Vizibilitate privată';
 
   const pieChartOptions = {
     chart: {
@@ -110,7 +132,7 @@ const QuizResults = ({ score, totalQuestions, onRestart, passed }) => {
                       <CountUp end={score} duration={2} />
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Răspunsuri Corecte
+                      Răspunsuri corecte
                     </Typography>
                   </Paper>
                 </Grid>
@@ -129,11 +151,55 @@ const QuizResults = ({ score, totalQuestions, onRestart, passed }) => {
                       <CountUp end={incorrectAnswers} duration={2} />
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Răspunsuri Greșite
+                      Răspunsuri greșite
                     </Typography>
                   </Paper>
                 </Grid>
               </Grid>
+
+              {questionBundleName && (
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 3,
+                    width: '100%',
+                    border: `1px solid ${theme.palette.divider}`,
+                    borderRadius: 2,
+                  }}
+                >
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Grilă compusă
+                  </Typography>
+                  <Typography variant="h6" sx={{ mt: 0.5 }}>
+                    {questionBundleName}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {[bundleAccessLabel, bundleVisibilityLabel].filter(Boolean).join(' / ')}
+                  </Typography>
+                </Paper>
+              )}
+
+              {questionSetName && (
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 3,
+                    width: '100%',
+                    border: `1px solid ${theme.palette.divider}`,
+                    borderRadius: 2,
+                  }}
+                >
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Set utilizat
+                  </Typography>
+                  <Typography variant="h6" sx={{ mt: 0.5 }}>
+                    {questionSetName}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {[accessLabel, visibilityLabel].filter(Boolean).join(' / ')}
+                  </Typography>
+                </Paper>
+              )}
 
               <Box sx={{ width: '100%', maxWidth: 400 }}>
                 <Chart

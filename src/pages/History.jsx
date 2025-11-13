@@ -3,7 +3,7 @@ import {
   Container, Box, Paper, Typography, Grid, Card, CardContent,
   Dialog, DialogTitle, DialogContent, DialogActions, Button,
   CircularProgress, Alert, useTheme, Pagination, Select, MenuItem,
-  IconButton, Tooltip, Stack, LinearProgress, Divider
+  IconButton, Tooltip, Stack, LinearProgress, Divider, Chip
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Icon } from '@iconify/react';
@@ -27,6 +27,39 @@ const quizTypeMap = {
   category9: 'Programare C# Teste grilă rezolvate',
   category10: 'Programare C# Teste grilă propuse spre rezolvare',
 };
+
+const accessTypeMap = {
+  owned: 'Set personal',
+  shared: 'Set partajat',
+  public: 'Set public',
+};
+
+const resolveQuizLabel = (entry) =>
+  entry.question_bundle_name ||
+  entry.question_set_name ||
+  quizTypeMap[entry.quiz_type] ||
+  'Chestionar personalizat';
+
+const resolveAccessLabel = (entry) => {
+  if (entry.question_bundle_access && accessTypeMap[entry.question_bundle_access]) {
+    return accessTypeMap[entry.question_bundle_access].replace('Set', 'Grila');
+  }
+  if (entry.question_set_access && accessTypeMap[entry.question_set_access]) {
+    return accessTypeMap[entry.question_set_access];
+  }
+  if (entry.question_bundle_visibility === 'public') {
+    return 'Grila publica';
+  }
+  if (entry.question_set_visibility === 'public') {
+    return 'Set public';
+  }
+  return 'Privat';
+};
+
+const getTotalQuestions = (entry) =>
+  entry.total_questions ||
+  entry.question_count ||
+  (entry.quiz_type === 'all' ? 45 : 40);
 
 const StatCard = ({ title, value, subtitle, color }) => {
   const theme = useTheme();
@@ -142,7 +175,7 @@ const History = () => {
     totalTests: history.length,
     passedTests: history.filter(test => test.passed).length,
     correctAnswers: history.reduce((acc, test) => acc + (test.correct_answers || 0), 0),
-    totalQuestions: history.reduce((acc, test) => acc + (test.total_questions || (test.quiz_type === 'all' ? 45 : 40)), 0)
+    totalQuestions: history.reduce((acc, test) => acc + getTotalQuestions(test), 0)
   };
 
   stats.passRate = stats.totalTests ? (stats.passedTests / stats.totalTests) * 100 : 0;
@@ -400,7 +433,7 @@ const History = () => {
                           <Grid container alignItems="center" spacing={2}>
                             <Grid item xs={12} md={6}>
                               <Typography variant="h6" gutterBottom>
-                                {quizTypeMap[entry.quiz_type]}
+                                {resolveQuizLabel(entry)}
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
                                 {new Date(entry.created_at).toLocaleDateString('ro-RO', {
@@ -411,10 +444,16 @@ const History = () => {
                                   minute: '2-digit'
                                 })}
                               </Typography>
+                              <Stack direction="row" spacing={1} mt={1}>
+                                <Chip size="small" label={resolveAccessLabel(entry)} />
+                                {entry.question_set_visibility === 'public' && (
+                                  <Chip size="small" variant="outlined" label="Public" />
+                                )}
+                              </Stack>
                             </Grid>
                             <Grid item xs={12} md={3}>
                               <Typography variant="h5" align="center">
-                                {entry.correct_answers}/{entry.total_questions || (entry.quiz_type === 'all' ? 45 : 40)}
+                                {entry.correct_answers}/{getTotalQuestions(entry)}
                               </Typography>
                               <Typography variant="body2" color="text.secondary" align="center">
                                 Răspunsuri Corecte
@@ -529,7 +568,10 @@ const History = () => {
               Categorie Test
             </Typography>
             <Typography variant="body1" paragraph>
-              {quizTypeMap[selectedEntry.quiz_type]}
+              {resolveQuizLabel(selectedEntry)}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {resolveAccessLabel(selectedEntry)}
             </Typography>
           </Grid>
 
@@ -544,7 +586,7 @@ const History = () => {
                     <Grid item xs={6}>
                       <Typography variant="body2" color="text.secondary">Total Întrebări</Typography>
                       <Typography variant="h6">
-                        {selectedEntry.total_questions || (selectedEntry.quiz_type === 'all' ? 45 : 40)}
+                        {getTotalQuestions(selectedEntry)}
                       </Typography>
                     </Grid>
                     <Grid item xs={6}>
@@ -602,7 +644,7 @@ const History = () => {
                     </Typography>
                     <Typography variant="h6" color={selectedEntry.passed ? 'success.main' : 'error.main'}>
                       <CountUp
-                        end={(selectedEntry.correct_answers / (selectedEntry.total_questions || (selectedEntry.quiz_type === 'all' ? 45 : 40))) * 100}
+                        end={(selectedEntry.correct_answers / (getTotalQuestions(selectedEntry))) * 100}
                         duration={1.5}
                         decimals={1}
                         suffix="%"
@@ -611,7 +653,7 @@ const History = () => {
                   </Stack>
                   <LinearProgress
                     variant="determinate"
-                    value={(selectedEntry.correct_answers / (selectedEntry.total_questions || (selectedEntry.quiz_type === 'all' ? 45 : 40))) * 100}
+                    value={(selectedEntry.correct_answers / (getTotalQuestions(selectedEntry))) * 100}
                     sx={{
                       height: 8,
                       borderRadius: 4,
@@ -630,7 +672,7 @@ const History = () => {
                   </Typography>
                   <Typography variant="h6" color="error.main">
                     <CountUp
-                      end={(selectedEntry.total_questions || (selectedEntry.quiz_type === 'all' ? 45 : 40)) - selectedEntry.correct_answers}
+                      end={(getTotalQuestions(selectedEntry)) - selectedEntry.correct_answers}
                       duration={1}
                     />
                   </Typography>

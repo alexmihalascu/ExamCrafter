@@ -1,12 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
-  sendPasswordResetEmail,
   updateProfile
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
@@ -27,51 +24,38 @@ export const AuthProvider = ({ children }) => {
   const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Sign up with email and password
-  const signup = async (email, password, displayName) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
+  const syncUserDocument = async (user) => {
+    if (!user?.uid) return;
 
-    // Update profile with display name
-    if (displayName) {
-      await updateProfile(user, { displayName });
-    }
-
-    // Create user document in Firestore with default role
-    await setDoc(doc(db, 'users', user.uid), {
+    const userDocRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userDocRef);
+    const baseProfile = {
       email: user.email,
-      displayName: displayName || '',
-      role: 'user', // default role
-      createdAt: new Date().toISOString(),
-    });
+      displayName: user.displayName || '',
+      photoURL: user.photoURL || '',
+      updatedAt: new Date().toISOString(),
+    };
 
-    return userCredential;
-  };
-
-  // Sign in with email and password
-  const login = (email, password) => {
-    return signInWithEmailAndPassword(auth, email, password);
+    if (!userDoc.exists()) {
+      await setDoc(userDocRef, {
+        ...baseProfile,
+        role: 'user',
+        createdAt: new Date().toISOString(),
+      });
+      setUserRole('user');
+    } else {
+      const userData = userDoc.data();
+      setUserRole(userData.role || 'user');
+      await setDoc(userDocRef, baseProfile, { merge: true });
+    }
   };
 
   // Sign in with Google
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
     const userCredential = await signInWithPopup(auth, provider);
-    const user = userCredential.user;
-
-    // Check if user document exists, if not create it
-    const userDocRef = doc(db, 'users', user.uid);
-    const userDoc = await getDoc(userDocRef);
-
-    if (!userDoc.exists()) {
-      await setDoc(userDocRef, {
-        email: user.email,
-        displayName: user.displayName || '',
-        photoURL: user.photoURL || '',
-        role: 'user', // default role
-        createdAt: new Date().toISOString(),
-      });
-    }
+    await syncUserDocument(userCredential.user);
 
     return userCredential;
   };
@@ -81,30 +65,39 @@ export const AuthProvider = ({ children }) => {
     return signOut(auth);
   };
 
-  // Reset password
-  const resetPassword = (email) => {
-    return sendPasswordResetEmail(auth, email);
-  };
+  const updateUserProfile = async ({ displayName, photoURL }) => {
+    if (!auth.currentUser) return;
 
-  // Fetch user role from Firestore
-  const fetchUserRole = async (uid) => {
-    try {
-      const userDocRef = doc(db, 'users', uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        setUserRole(userData.role || 'user');
-        return userData.role;
-      } else {
-        setUserRole('user');
-        return 'user';
-      }
-    } catch (error) {
-      console.error('Error fetching user role:', error);
-      setUserRole('user');
-      return 'user';
+    const profileUpdates = {};
+    if (typeof displayName === 'string') {
+      profileUpdates.displayName = displayName.trim();
     }
+    if (typeof photoURL === 'string') {
+      profileUpdates.photoURL = photoURL;
+    }
+
+    if (!Object.keys(profileUpdates).length) {
+      return;
+    }
+
+    await updateProfile(auth.currentUser, profileUpdates);
+    await auth.currentUser.reload();
+
+    await setDoc(
+      doc(db, 'users', auth.currentUser.uid),
+      {
+        ...(profileUpdates.displayName !== undefined && {
+          displayName: auth.currentUser.displayName,
+        }),
+        ...(profileUpdates.photoURL !== undefined && {
+          photoURL: auth.currentUser.photoURL,
+        }),
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+
+    setCurrentUser({ ...auth.currentUser });
   };
 
   // Check if user is admin
@@ -117,7 +110,7 @@ export const AuthProvider = ({ children }) => {
       setCurrentUser(user);
 
       if (user) {
-        await fetchUserRole(user.uid);
+        await syncUserDocument(user);
       } else {
         setUserRole(null);
       }
@@ -132,11 +125,9 @@ export const AuthProvider = ({ children }) => {
     currentUser,
     userRole,
     isAdmin,
-    signup,
-    login,
     signInWithGoogle,
     logout,
-    resetPassword,
+    updateUserProfile,
     loading,
   };
 

@@ -1,5 +1,4 @@
-import React from 'react';
-import { Box, Typography, Container, Link, Paper, useTheme } from '@mui/material';
+import { Box, Container, Link, Paper, Typography, useTheme } from '@mui/material';
 import { motion } from 'framer-motion';
 
 const Footer = () => {
@@ -7,7 +6,7 @@ const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <Paper 
+    <Paper
       component={motion.footer}
       elevation={0}
       initial={{ opacity: 0, y: 20 }}
@@ -16,8 +15,8 @@ const Footer = () => {
       sx={{
         mt: 'auto',
         backdropFilter: 'blur(10px)',
-        background: `linear-gradient(135deg, 
-          ${theme.palette.primary.dark}15 0%, 
+        background: `linear-gradient(135deg,
+          ${theme.palette.primary.dark}15 0%,
           ${theme.palette.primary.main}10 50%,
           ${theme.palette.primary.light}05 100%)`,
         borderTop: `1px solid ${theme.palette.primary.main}20`,
@@ -32,8 +31,8 @@ const Footer = () => {
           bottom: 0,
           background: theme.palette.background.paper,
           opacity: 0.8,
-          zIndex: 0
-        }
+          zIndex: 0,
+        },
       }}
     >
       <Container maxWidth="lg">
@@ -45,27 +44,27 @@ const Footer = () => {
             alignItems: 'center',
             gap: 1,
             position: 'relative',
-            zIndex: 1
+            zIndex: 1,
           }}
         >
           <Typography
+            component="div"
             sx={{
               color: theme.palette.text.primary,
               display: 'flex',
               alignItems: 'center',
               gap: 1,
-              fontSize: '0.95rem'
+              fontSize: '0.95rem',
             }}
           >
-            © {currentYear} ExamCrafter
-            <span style={{ color: theme.palette.text.secondary }}>•</span>
-            Aplicație creată de
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
+            &copy; {currentYear} ExamCrafter
+            <Box component="span" sx={{ color: theme.palette.text.secondary }}>
+              |
+            </Box>
+            Aplicatie creata de
+            <motion.span whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
-                href="https://alexandrumihalascu.tech"
+                href="https://mhlsq.ro"
                 target="_blank"
                 rel="noopener noreferrer"
                 sx={{
@@ -80,23 +79,24 @@ const Footer = () => {
                     height: '2px',
                     bottom: -2,
                     left: 0,
-                    background: `linear-gradient(90deg, 
-                      ${theme.palette.primary.main}, 
+                    background: `linear-gradient(90deg,
+                      ${theme.palette.primary.main},
                       ${theme.palette.primary.light})`,
-                    transition: 'width 0.3s ease'
+                    transition: 'width 0.3s ease',
                   },
                   '&:hover': {
                     color: theme.palette.primary.light,
                     '&::after': {
-                      width: '100%'
-                    }
-                  }
+                      width: '100%',
+                    },
+                  },
                 }}
               >
-                Alexandru Mihalașcu
+                MHLSQ Software
               </Link>
-            </motion.div>
+            </motion.span>
           </Typography>
+
         </Box>
       </Container>
     </Paper>

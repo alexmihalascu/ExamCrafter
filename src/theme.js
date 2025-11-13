@@ -1,202 +1,154 @@
-import { createTheme } from '@mui/material/styles';
+import { alpha, createTheme } from '@mui/material/styles';
 
-// Custom shadows for depth
-const shadows = [
+const baseShadows = [
   'none',
-  '0px 2px 8px rgba(0, 0, 0, 0.1)',
-  '0px 4px 16px rgba(0, 0, 0, 0.12)',
-  '0px 8px 24px rgba(0, 0, 0, 0.14)',
-  '0px 12px 32px rgba(0, 0, 0, 0.16)',
-  '0px 16px 40px rgba(0, 0, 0, 0.18)',
-  ...Array(19).fill('none'),
+  '0px 15px 45px rgba(8, 10, 35, 0.08)',
+  '0px 25px 65px rgba(8, 10, 35, 0.12)',
+  ...Array(22).fill('none'),
 ];
 
-// Typography configuration
 const typography = {
-  fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif",
-  h1: { fontSize: '2.5rem', fontWeight: 700, lineHeight: 1.2 },
-  h2: { fontSize: '2rem', fontWeight: 700, lineHeight: 1.3 },
-  h3: { fontSize: '1.75rem', fontWeight: 600, lineHeight: 1.3 },
-  h4: { fontSize: '1.5rem', fontWeight: 600, lineHeight: 1.4 },
-  h5: { fontSize: '1.25rem', fontWeight: 600, lineHeight: 1.4 },
-  h6: { fontSize: '1rem', fontWeight: 600, lineHeight: 1.4 },
-  button: { textTransform: 'none', fontWeight: 500 }
+  fontFamily: "'SF Pro Display', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif",
+  h1: { fontSize: '3rem', fontWeight: 700, letterSpacing: '-0.04em' },
+  h2: { fontSize: '2.25rem', fontWeight: 600, letterSpacing: '-0.02em' },
+  h3: { fontSize: '1.9rem', fontWeight: 600 },
+  h4: { fontSize: '1.5rem', fontWeight: 600 },
+  h5: { fontSize: '1.25rem', fontWeight: 600 },
+  h6: { fontSize: '1rem', fontWeight: 600, letterSpacing: '0.02em' },
+  button: { textTransform: 'none', fontWeight: 600, letterSpacing: '0.04em' },
 };
 
-// Common component styles
-const components = {
-  MuiButton: {
-    styleOverrides: {
-      root: {
-        borderRadius: 8,
-        textTransform: 'none',
-        fontWeight: 500,
-        padding: '8px 16px',
-      },
-      contained: {
-        boxShadow: 'none',
-        '&:hover': {
-          boxShadow: shadows[1],
-        },
-      },
-    },
-  },
-  MuiCard: {
-    styleOverrides: {
-      root: {
-        borderRadius: 12,
-        backgroundImage: 'none',
-      },
-    },
-  },
-  MuiPaper: {
-    styleOverrides: {
-      root: {
-        backgroundImage: 'none',
-        borderRadius: 12,
-      },
-    },
-  },
-  MuiAppBar: {
-    styleOverrides: {
-      root: {
-        borderRadius: 0,
-        backdropFilter: 'blur(8px)',
-      },
-    },
-  },
-  MuiTextField: {
-    styleOverrides: {
-      root: {
-        '& .MuiOutlinedInput-root': {
-          borderRadius: 8,
-        },
-      },
-    },
-  },
-};
-
-// Light theme
-export const lightTheme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#0A84FF',
-      light: '#6CB8FF',
-      dark: '#0058CC',
-      contrastText: '#FFFFFF',
-    },
-    secondary: {
-      main: '#FF9F0A',
-      light: '#FFCC66',
-      dark: '#CC7D00',
-      contrastText: '#000000',
-    },
-    background: {
-      default: '#F2F2F7',
-      paper: '#FFFFFF',
-    },
-    text: {
-      primary: '#000000',
-      secondary: '#666666',
-    },
-    success: {
-      main: '#32D74B',
-      light: '#86E69D',
-      dark: '#248A32',
-    },
-    error: {
-      main: '#FF453A',
-      light: '#FF8A84',
-      dark: '#CC1810',
-    },
-    warning: {
-      main: '#FFD60A',
-      light: '#FFE566',
-      dark: '#CC9C00',
-    },
-    info: {
-      main: '#64D2FF',
-      light: '#A6E5FF',
-      dark: '#0091CC',
-    },
-    divider: 'rgba(0, 0, 0, 0.12)',
-  },
-  typography,
-  components,
-  shadows,
+const getGlassSurface = (mode) => ({
+  backgroundColor: mode === 'light' ? 'rgba(255, 255, 255, 0.75)' : 'rgba(18, 21, 40, 0.75)',
+  border: `1px solid ${mode === 'light' ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.12)'}`,
+  backdropFilter: 'blur(28px) saturate(180%)',
+  boxShadow: mode === 'light'
+    ? '0 35px 70px rgba(9, 12, 32, 0.12)'
+    : '0 40px 80px rgba(0, 0, 0, 0.45)',
 });
 
-// Dark theme
-export const darkTheme = createTheme({
-  palette: {
-    mode: 'dark',
-    primary: {
-      main: '#0A84FF',
-      light: '#5AC8FA',
-      dark: '#0058CC',
-      contrastText: '#FFFFFF',
-    },
-    secondary: {
-      main: '#FF9F0A',
-      light: '#FFB340',
-      dark: '#CC7D00',
-      contrastText: '#000000',
-    },
-    background: {
-      default: '#121212',
-      paper: '#1C1C1E',
-    },
-    text: {
-      primary: '#FFFFFF',
-      secondary: '#98989D',
-    },
-    success: {
-      main: '#32D74B',
-      light: '#4CD964',
-      dark: '#248A32',
-    },
-    error: {
-      main: '#FF453A',
-      light: '#FF6961',
-      dark: '#CC1810',
-    },
-    warning: {
-      main: '#FFD60A',
-      light: '#FFE33B',
-      dark: '#CC9C00',
-    },
-    info: {
-      main: '#64D2FF',
-      light: '#91E4FF',
-      dark: '#0091CC',
-    },
-    divider: 'rgba(255, 255, 255, 0.12)',
-  },
-  typography,
-  components: {
-    ...components,
-    MuiPaper: {
+const buildComponents = (mode) => {
+  const glass = getGlassSurface(mode);
+  return {
+    MuiButton: {
       styleOverrides: {
         root: {
-          backgroundImage: 'none',
-          borderRadius: 12,
-          backgroundColor: '#1C1C1E',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
+          borderRadius: 999,
+          padding: '10px 28px',
+        },
+        contained: {
+          background: mode === 'light'
+            ? 'linear-gradient(120deg, #4F5BFF, #8C4EFF)'
+            : 'linear-gradient(120deg, #6E76FF, #A557FF)',
+          color: '#fff',
+          boxShadow: '0 20px 30px rgba(78, 109, 255, 0.25)',
+        },
+        outlined: {
+          borderColor: alpha('#FFFFFF', 0.3),
+          color: '#fff',
+          backgroundColor: alpha('#FFFFFF', 0.06),
+          backdropFilter: 'blur(12px)',
         },
       },
+    },
+    MuiPaper: {
+      styleOverrides: { root: { borderRadius: 24, ...glass } },
     },
     MuiCard: {
+      styleOverrides: { root: { borderRadius: 24, ...glass } },
+    },
+    MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundImage: 'none',
-          borderRadius: 12,
-          backgroundColor: '#1C1C1E',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
+          background: 'rgba(10, 12, 25, 0.8)',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          backdropFilter: 'blur(20px)',
         },
       },
     },
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          '& .MuiOutlinedInput-root': {
+            borderRadius: 16,
+            backgroundColor: alpha('#FFFFFF', mode === 'light' ? 0.35 : 0.05),
+            backdropFilter: 'blur(18px)',
+          },
+          '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
+        },
+      },
+    },
+  };
+};
+
+const lightPalette = {
+  mode: 'light',
+  primary: {
+    main: '#4D5BFF',
+    light: '#8BA1FF',
+    dark: '#3A3FD8',
+    contrastText: '#FFFFFF',
   },
-  shadows: shadows.map(shadow => 
-    shadow === 'none' ? shadow : shadow.replace('rgba(0, 0, 0,', 'rgba(0, 0, 0,')),
+  secondary: {
+    main: '#FF82C3',
+    light: '#FFC6E8',
+    dark: '#D85298',
+    contrastText: '#0B0F19',
+  },
+  background: {
+    default: '#EBEEF9',
+    paper: 'rgba(255,255,255,0.75)',
+  },
+  text: {
+    primary: '#0B0F19',
+    secondary: '#3E4A76',
+  },
+  success: { main: '#3FE0B0' },
+  error: { main: '#FF6B6B' },
+  warning: { main: '#FFD166' },
+  info: { main: '#6AD7FF' },
+};
+
+const darkPalette = {
+  mode: 'dark',
+  primary: {
+    main: '#8C9EFF',
+    light: '#B6C5FF',
+    dark: '#5C6BC0',
+    contrastText: '#FFFFFF',
+  },
+  secondary: {
+    main: '#FF9ACD',
+    light: '#FFC4E3',
+    dark: '#C76A9C',
+    contrastText: '#080B16',
+  },
+  background: {
+    default: '#050915',
+    paper: 'rgba(10,12,25,0.8)',
+  },
+  text: {
+    primary: '#F8FAFF',
+    secondary: '#9FA8D4',
+  },
+  success: { main: '#3EE7B0' },
+  error: { main: '#FF7B8F' },
+  warning: { main: '#FFD95E' },
+  info: { main: '#6AD7FF' },
+};
+
+export const lightTheme = createTheme({
+  palette: lightPalette,
+  typography,
+  shape: { borderRadius: 22 },
+  shadows: baseShadows,
+  components: buildComponents('light'),
+});
+
+export const darkTheme = createTheme({
+  palette: darkPalette,
+  typography,
+  shape: { borderRadius: 22 },
+  shadows: baseShadows,
+  components: buildComponents('dark'),
 });

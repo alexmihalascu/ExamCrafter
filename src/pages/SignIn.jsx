@@ -1,100 +1,56 @@
-import React, { useState } from 'react';
+import { Icon } from '@iconify/react';
 import {
-  Box,
-  Container,
-  Paper,
-  TextField,
-  Button,
-  Typography,
-  Divider,
   Alert,
-  InputAdornment,
-  IconButton,
+  Box,
+  Button,
+  Container,
+  Divider,
+  Grid,
+  Paper,
+  Stack,
+  Typography,
   useTheme,
-  Tab,
-  Tabs,
 } from '@mui/material';
 import { motion } from 'framer-motion';
-import { Icon } from '@iconify/react';
-import { useAuth } from '../contexts/AuthContext';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+
+const highlights = [
+  {
+    icon: 'mdi:blur-linear',
+    title: 'Liquid on-boarding',
+    description: 'Interfata fluida, reactiva, ce adapteaza lumina si profunzimea la dispozitiv.',
+  },
+  {
+    icon: 'mdi:shield-check',
+    title: 'Autentificare unica',
+    description: 'Cont Google obligatoriu pentru securitate Zero-Password.',
+  },
+  {
+    icon: 'mdi:share-variant',
+    title: 'Control granular',
+    description: 'Partajezi seturi de intrebari pe email, privat sau public.',
+  },
+];
 
 const SignIn = () => {
   const theme = useTheme();
+  const { signInWithGoogle } = useAuth();
   const navigate = useNavigate();
-  const { login, signup, signInWithGoogle } = useAuth();
-
-  const [tabValue, setTabValue] = useState(0);
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Login form state
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-
-  // Signup form state
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
-  const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
-
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-    setError('');
-  };
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      await login(loginEmail, loginPassword);
-      navigate('/main');
-    } catch (err) {
-      setError('Autentificare eșuată. Verifică email-ul și parola.');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSignup = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    if (signupPassword !== signupConfirmPassword) {
-      return setError('Parolele nu coincid.');
-    }
-
-    if (signupPassword.length < 6) {
-      return setError('Parola trebuie să aibă cel puțin 6 caractere.');
-    }
-
-    setLoading(true);
-
-    try {
-      await signup(signupEmail, signupPassword, displayName);
-      navigate('/main');
-    } catch (err) {
-      setError('Înregistrare eșuată. Email-ul ar putea fi deja folosit.');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleGoogleSignIn = async () => {
-    setError('');
     setLoading(true);
+    setError('');
 
     try {
       await signInWithGoogle();
       navigate('/main');
     } catch (err) {
-      setError('Autentificare cu Google eșuată.');
-      console.error(err);
+      console.error('Google sign-in failed:', err);
+      setError('Autentificarea cu Google a esuat. Incearca din nou.');
     } finally {
       setLoading(false);
     }
@@ -107,212 +63,131 @@ const SignIn = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.background.default} 100%)`,
-        py: 4,
+        position: 'relative',
+        overflow: 'hidden',
+        py: 10,
+        px: 2,
       }}
     >
-      <Container maxWidth="sm">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          background:
+            'radial-gradient(circle at 10% 20%, rgba(124, 147, 255, 0.4), transparent 40%), radial-gradient(circle at 90% 0%, rgba(255, 140, 212, 0.3), transparent 45%)',
+          filter: 'blur(40px)',
+          opacity: 0.8,
+        }}
+      />
+
+      <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
+        <Paper
+          component={motion.div}
+          initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
+          sx={{
+            borderRadius: 6,
+            p: { xs: 4, md: 6 },
+            background:
+              theme.palette.mode === 'dark' ? 'rgba(8, 12, 24, 0.85)' : 'rgba(255, 255, 255, 0.85)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            boxShadow: '0 25px 80px rgba(4,6,19,0.55)',
+          }}
         >
-          <Paper
-            elevation={4}
-            sx={{
-              p: 4,
-              borderRadius: 3,
-              background: theme.palette.background.paper,
-            }}
-          >
-            <Box sx={{ textAlign: 'center', mb: 3 }}>
-              <Typography variant="h4" fontWeight="bold" gutterBottom>
-                ExamCrafter
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Bine ai venit! Autentifică-te pentru a continua.
-              </Typography>
-            </Box>
+          <Grid container spacing={4}>
+            <Grid item xs={12} md={6}>
+              <Stack spacing={3} height="100%" justifyContent="center">
+                <Typography variant="overline" color="primary" letterSpacing={4}>
+                  EXAMCRAFTER
+                </Typography>
+                <Typography variant="h2">
+                  Autentificare <br />
+                </Typography>
+                <Typography variant="body1" color="text.secondary">
+                  Contul tau Google devine cheia unui ecosistem de chestionare premium cu estetica
+                  2025. Un singur click pentru a sincroniza avatar, preferinte si acces la
+                  dataset-urile partajate.
+                </Typography>
 
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {error}
-              </Alert>
-            )}
+                {error && <Alert severity="error">{error}</Alert>}
 
-            <Tabs
-              value={tabValue}
-              onChange={handleTabChange}
-              variant="fullWidth"
-              sx={{ mb: 3 }}
-            >
-              <Tab label="Autentificare" />
-              <Tab label="Înregistrare" />
-            </Tabs>
-
-            {tabValue === 0 ? (
-              // Login Form
-              <form onSubmit={handleLogin}>
-                <TextField
-                  fullWidth
-                  label="Email"
-                  type="email"
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  required
-                  sx={{ mb: 2 }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Icon icon="mdi:email" />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-                <TextField
-                  fullWidth
-                  label="Parolă"
-                  type={showPassword ? 'text' : 'password'}
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  required
-                  sx={{ mb: 3 }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Icon icon="mdi:lock" />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={() => setShowPassword(!showPassword)}
-                          edge="end"
-                        >
-                          <Icon icon={showPassword ? 'mdi:eye-off' : 'mdi:eye'} />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
                 <Button
-                  fullWidth
                   variant="contained"
-                  type="submit"
+                  size="large"
+                  onClick={handleGoogleSignIn}
                   disabled={loading}
-                  sx={{ mb: 2, py: 1.5 }}
+                  startIcon={<Icon icon="mdi:google" />}
+                  sx={{
+                    py: 1.8,
+                    fontSize: 18,
+                    alignSelf: 'flex-start',
+                  }}
                 >
-                  {loading ? 'Se încarcă...' : 'Autentificare'}
+                  {loading ? 'Se autentifica...' : 'Continua cu Google'}
                 </Button>
-              </form>
-            ) : (
-              // Signup Form
-              <form onSubmit={handleSignup}>
-                <TextField
-                  fullWidth
-                  label="Nume"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  required
-                  sx={{ mb: 2 }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Icon icon="mdi:account" />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-                <TextField
-                  fullWidth
-                  label="Email"
-                  type="email"
-                  value={signupEmail}
-                  onChange={(e) => setSignupEmail(e.target.value)}
-                  required
-                  sx={{ mb: 2 }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Icon icon="mdi:email" />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-                <TextField
-                  fullWidth
-                  label="Parolă"
-                  type={showPassword ? 'text' : 'password'}
-                  value={signupPassword}
-                  onChange={(e) => setSignupPassword(e.target.value)}
-                  required
-                  sx={{ mb: 2 }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Icon icon="mdi:lock" />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={() => setShowPassword(!showPassword)}
-                          edge="end"
-                        >
-                          <Icon icon={showPassword ? 'mdi:eye-off' : 'mdi:eye'} />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-                <TextField
-                  fullWidth
-                  label="Confirmă Parola"
-                  type={showPassword ? 'text' : 'password'}
-                  value={signupConfirmPassword}
-                  onChange={(e) => setSignupConfirmPassword(e.target.value)}
-                  required
-                  sx={{ mb: 3 }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Icon icon="mdi:lock-check" />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-                <Button
-                  fullWidth
-                  variant="contained"
-                  type="submit"
-                  disabled={loading}
-                  sx={{ mb: 2, py: 1.5 }}
-                >
-                  {loading ? 'Se încarcă...' : 'Înregistrare'}
-                </Button>
-              </form>
-            )}
 
-            <Divider sx={{ my: 2 }}>SAU</Divider>
+                <Divider flexItem light />
 
-            <Button
-              fullWidth
-              variant="outlined"
-              onClick={handleGoogleSignIn}
-              disabled={loading}
-              sx={{
-                py: 1.5,
-                borderColor: theme.palette.divider,
-                '&:hover': {
-                  borderColor: theme.palette.primary.main,
-                },
-              }}
-              startIcon={<Icon icon="mdi:google" />}
-            >
-              Continuă cu Google
-            </Button>
-          </Paper>
-        </motion.div>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Icon icon="mdi:sparkles" width={28} />
+                  <Typography variant="body2" color="text.secondary">
+                    Politica de acces bazata pe invitatii si partajari explicite.
+                  </Typography>
+                </Stack>
+              </Stack>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Stack spacing={2}>
+                {highlights.map(highlight => (
+                  <Box
+                    key={highlight.title}
+                    sx={{
+                      display: 'flex',
+                      gap: 2,
+                      alignItems: 'flex-start',
+                      p: 2.5,
+                      borderRadius: 4,
+                      background:
+                        theme.palette.mode === 'dark'
+                          ? 'rgba(255,255,255,0.05)'
+                          : 'rgba(255,255,255,0.65)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 56,
+                        height: 56,
+                        borderRadius: 3,
+                        display: 'grid',
+                        placeItems: 'center',
+                        background:
+                          'linear-gradient(135deg, rgba(105,119,255,0.2), rgba(255,145,207,0.2))',
+                      }}
+                    >
+                      <Icon
+                        icon={highlight.icon}
+                        width={28}
+                        height={28}
+                        color={theme.palette.primary.main}
+                      />
+                    </Box>
+                    <Box>
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        {highlight.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {highlight.description}
+                      </Typography>
+                    </Box>
+                  </Box>
+                ))}
+              </Stack>
+            </Grid>
+          </Grid>
+        </Paper>
       </Container>
     </Box>
   );

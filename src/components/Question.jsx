@@ -1,49 +1,108 @@
-import React from 'react';
-import { Typography, Box, Radio, RadioGroup, FormControlLabel, FormControl, Paper } from '@mui/material';
+import React, { useMemo } from 'react';
+import {
+  Typography,
+  Box,
+  Paper,
+  Checkbox,
+  Radio,
+  FormControlLabel,
+  Stack,
+} from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { motion } from 'framer-motion';
+import { OPTION_KEYS } from '../utils/questionUtils';
 
-const Question = ({ question, handleAnswerChange, selectedAnswer, answerValidation, answerSubmitted }) => {
-  const theme = useTheme();
-
-  if (!question) {
-    return null; // Prevent rendering if question is undefined
+const normalizeOptions = (question) => {
+  if (Array.isArray(question?.options) && question.options.length) {
+    return question.options.map((opt, index) => ({
+      id: opt.id || OPTION_KEYS[index] || `opt${index}`,
+      text: opt.text ?? opt.value ?? '',
+    }));
   }
 
-  // Get correct answer - support both field names for compatibility
-  const correctAnswer = question.raspuns_corect || question.varianta_corecta;
+  return OPTION_KEYS.map((key) => {
+    const variant = question?.[`varianta_${key}`];
+    return variant
+      ? {
+          id: key,
+          text: variant,
+        }
+      : null;
+  }).filter(Boolean);
+};
 
-  // Background color logic
-  const getColor = (option) => {
+const Question = ({ question, onAnswerChange, selectedAnswer, answerSubmitted }) => {
+  const theme = useTheme();
+  const options = useMemo(() => normalizeOptions(question), [question]);
+  const allowMultiple = question?.allowMultiple || (question?.correctAnswers?.length || 0) > 1;
+
+  const normalizedSelected = useMemo(() => {
+    if (Array.isArray(selectedAnswer)) {
+      return selectedAnswer;
+    }
+    if (typeof selectedAnswer === 'string' && selectedAnswer) {
+      return [selectedAnswer];
+    }
+    return [];
+  }, [selectedAnswer]);
+
+  const correctAnswers = useMemo(() => {
+    if (Array.isArray(question?.correctAnswers) && question.correctAnswers.length) {
+      return question.correctAnswers.map((ans) => ans.toLowerCase());
+    }
+    const fallback = question?.raspuns_corect
+      ? question.raspuns_corect.split(',').map((ans) => ans.trim().toLowerCase())
+      : [];
+    return fallback.length ? fallback : [question?.varianta_corecta || 'a'];
+  }, [question]);
+
+  const getColors = (optionId) => {
     if (!answerSubmitted) {
-      return theme.palette.background.paper; // Default background before submission
+      return {
+        border: normalizedSelected.includes(optionId) ? theme.palette.primary.main : theme.palette.divider,
+        background: theme.palette.background.paper,
+        text: theme.palette.text.primary,
+      };
     }
-    if (option === correctAnswer) {
-      return theme.palette.success.light; // Always highlight the correct answer in green
+
+    if (correctAnswers.includes(optionId.toLowerCase())) {
+      return {
+        border: theme.palette.success.main,
+        background: `${theme.palette.success.main}22`,
+        text: theme.palette.success.main,
+      };
     }
-    if (option === selectedAnswer && selectedAnswer !== correctAnswer) {
-      return theme.palette.error.light; // Highlight the incorrect selected answer in red
+
+    if (normalizedSelected.includes(optionId)) {
+      return {
+        border: theme.palette.error.main,
+        background: `${theme.palette.error.main}15`,
+        text: theme.palette.error.main,
+      };
     }
-    return theme.palette.background.paper; // Default for other options
+
+    return {
+      border: theme.palette.divider,
+      background: theme.palette.background.paper,
+      text: theme.palette.text.primary,
+    };
   };
 
-  // Border color logic
-  const getBorderColor = (option) => {
-    if (!answerSubmitted) {
-      return selectedAnswer === option ? theme.palette.primary.main : theme.palette.divider;
+  const handleSelect = (optionId) => {
+    if (answerSubmitted) return;
+
+    if (allowMultiple) {
+      const nextSelection = normalizedSelected.includes(optionId)
+        ? normalizedSelected.filter((id) => id !== optionId)
+        : [...normalizedSelected, optionId];
+      onAnswerChange(question.id, nextSelection);
+    } else {
+      onAnswerChange(question.id, optionId);
     }
-    if (option === correctAnswer) {
-      return theme.palette.success.main; // Correct answer
-    }
-    if (option === selectedAnswer && selectedAnswer !== correctAnswer) {
-      return theme.palette.error.main; // Incorrect selected answer
-    }
-    return theme.palette.divider; // Neutral border for other options
   };
 
   return (
     <Box mb={4}>
-      {/* Question Title */}
       <Typography
         variant="h6"
         gutterBottom
@@ -52,75 +111,77 @@ const Question = ({ question, handleAnswerChange, selectedAnswer, answerValidati
           mb: 3,
           background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
           backgroundClip: 'text',
-          textFillColor: 'transparent',
+          color: 'transparent',
         }}
       >
         {question.intrebare}
       </Typography>
 
-      {/* Answer Options */}
-      <FormControl component="fieldset" sx={{ width: '100%' }}>
-        <RadioGroup value={selectedAnswer} onChange={handleAnswerChange}>
-          {['a', 'b', 'c', 'd'].map((option) => (
+      {allowMultiple && (
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+          Selecteaza toate raspunsurile corecte
+        </Typography>
+      )}
+
+      <Stack spacing={2}>
+        {options.map((option) => {
+          const palette = getColors(option.id);
+          return (
             <motion.div
-              key={option}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
+              key={option.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
             >
               <Paper
-                elevation={3}
+                onClick={() => handleSelect(option.id)}
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
-                  mb: 2,
                   p: 2,
-                  borderRadius: 2,
-                  backgroundColor: getColor(option),
-                  border: `2px solid ${getBorderColor(option)}`,
-                  cursor: !answerSubmitted ? 'pointer' : 'default',
-                  transition: 'all 0.3s ease',
-                  '&:hover': !answerSubmitted && {
-                    transform: 'translateX(5px)',
-                    borderColor: theme.palette.primary.main,
-                    backgroundColor: `${theme.palette.primary.main}10`,
-                  },
+                  borderRadius: 3,
+                  cursor: answerSubmitted ? 'default' : 'pointer',
+                  backgroundColor: palette.background,
+                  border: `1px solid ${palette.border}`,
+                  transition: 'all 0.2s ease',
+                  '&:hover': !answerSubmitted
+                    ? {
+                        borderColor: theme.palette.primary.main,
+                        transform: 'translateX(4px)',
+                      }
+                    : {},
                 }}
               >
                 <FormControlLabel
-                  value={option}
+                  value={option.id}
                   control={
-                    <Radio
-                      disabled={answerSubmitted}
-                      sx={{
-                        '&.Mui-checked': {
-                          color: theme.palette.primary.main,
-                        },
-                      }}
-                    />
+                    allowMultiple ? (
+                      <Checkbox
+                        checked={normalizedSelected.includes(option.id)}
+                        disabled={answerSubmitted}
+                        onChange={() => handleSelect(option.id)}
+                      />
+                    ) : (
+                      <Radio
+                        checked={normalizedSelected.includes(option.id)}
+                        disabled={answerSubmitted}
+                        onChange={() => handleSelect(option.id)}
+                      />
+                    )
                   }
                   label={
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        color:
-                          answerSubmitted && option === correctAnswer
-                            ? theme.palette.success.main // Correct answer
-                            : answerSubmitted && option === selectedAnswer && selectedAnswer !== correctAnswer
-                            ? theme.palette.error.main // Incorrect answer
-                            : 'text.primary', // Default text color
-                      }}
-                    >
-                      {question[`varianta_${option}`]}
+                    <Typography variant="body1" sx={{ color: palette.text }}>
+                      <strong style={{ textTransform: 'uppercase', marginRight: 6 }}>{option.id}.</strong>
+                      {option.text}
                     </Typography>
                   }
-                  sx={{ width: '100%' }}
+                  sx={{ width: '100%', m: 0 }}
                 />
               </Paper>
             </motion.div>
-          ))}
-        </RadioGroup>
-      </FormControl>
+          );
+        })}
+      </Stack>
     </Box>
   );
 };
