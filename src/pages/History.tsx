@@ -10,15 +10,24 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import * as chartExports from 'react-apexcharts';
 import * as countUpExports from 'react-countup';
-import { useAuth } from '../contexts/AuthContext';
-
-const Chart = chartExports.default?.default || chartExports.default || chartExports;
-const CountUp = countUpExports.default?.default || countUpExports.default || countUpExports;
+import { useAuth } from '../contexts/auth-context';
 import { db } from '../firebase/firebaseConfig';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { interopDefault } from '../utils/interop';
+import type { QuizResult } from '../types';
+
+const Chart = interopDefault(chartExports);
+const CountUp = interopDefault(countUpExports);
+
+type HistoryEntry = QuizResult & { id: string; created_at?: string };
+
+interface SortConfig {
+  key: 'timestamp' | 'created_at' | 'correct_answers';
+  direction: 'asc' | 'desc';
+}
 
 // Quiz type mapping object
-const quizTypeMap = {
+const quizTypeMap: Record<string, string> = {
   all: 'Aleatoare (45 întrebări din toate categoriile)',
   category1: 'Realizarea aplicațiilor cu baze de date MS ACCESS Teste grilă rezolvate',
   category2: 'Realizarea aplicațiilor cu baze de date MS ACCESS Teste grilă propuse spre rezolvare',
@@ -32,19 +41,19 @@ const quizTypeMap = {
   category10: 'Programare C# Teste grilă propuse spre rezolvare',
 };
 
-const accessTypeMap = {
+const accessTypeMap: Record<string, string> = {
   owned: 'Set personal',
   shared: 'Set partajat',
   public: 'Set public',
 };
 
-const resolveQuizLabel = (entry) =>
+const resolveQuizLabel = (entry: HistoryEntry): string =>
   entry.question_bundle_name ||
   entry.question_set_name ||
   quizTypeMap[entry.quiz_type] ||
   'Chestionar personalizat';
 
-const resolveAccessLabel = (entry) => {
+const resolveAccessLabel = (entry: HistoryEntry): string => {
   if (entry.question_bundle_access && accessTypeMap[entry.question_bundle_access]) {
     return accessTypeMap[entry.question_bundle_access].replace('Set', 'Grila');
   }
@@ -60,12 +69,19 @@ const resolveAccessLabel = (entry) => {
   return 'Privat';
 };
 
-const getTotalQuestions = (entry) =>
+const getTotalQuestions = (entry: HistoryEntry): number =>
   entry.total_questions ||
   entry.question_count ||
   (entry.quiz_type === 'all' ? 45 : 40);
 
-const StatCard = ({ title, value, subtitle, color }) => {
+interface StatCardProps {
+  title: string;
+  value: number;
+  subtitle?: string;
+  color: string;
+}
+
+const StatCard = ({ title, value, subtitle, color }: StatCardProps) => {
   const theme = useTheme();
   const showDecimals = title === "Medie Răspunsuri";
   
@@ -106,7 +122,7 @@ const StatCard = ({ title, value, subtitle, color }) => {
 };
 
 // Chart Card Component
-const ChartCard = ({ title, children }) => (
+const ChartCard = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <Paper sx={{ p: 3, height: '100%' }}>
     <Typography variant="h6" gutterBottom>{title}</Typography>
     {children}
@@ -117,14 +133,14 @@ const History = () => {
   const { currentUser } = useAuth();
   const theme = useTheme();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [selectedEntry, setSelectedEntry] = useState(null);
+  const [error, setError] = useState<string | null>(null);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [selectedEntry, setSelectedEntry] = useState<HistoryEntry | null>(null);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [sortConfig, setSortConfig] = useState({
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
     key: 'timestamp',
-    direction: 'desc'
+    direction: 'desc',
   });
 
   useEffect(() => {
@@ -140,18 +156,18 @@ const History = () => {
         );
 
         const querySnapshot = await getDocs(q);
-        const data = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          created_at: doc.data().timestamp || doc.data().created_at // Support both field names
-        }));
+        const data = querySnapshot.docs.map((docSnap) => ({
+          id: docSnap.id,
+          ...docSnap.data(),
+          created_at: docSnap.data().timestamp || docSnap.data().created_at, // Support both field names
+        })) as HistoryEntry[];
 
         // Sort by timestamp/created_at in descending order
-        data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        data.sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime());
 
         setHistory(data);
       } catch (err) {
-        setError(err.message);
+        setError(err instanceof Error ? err.message : 'Nu s-a putut incarca istoricul.');
         console.error('Error fetching history:', err);
       } finally {
         setLoading(false);
@@ -161,22 +177,25 @@ const History = () => {
     fetchHistory();
   }, [currentUser]);
 
+  const totalTests = history.length;
+  const passedTests = history.filter((test) => test.passed).length;
+  const correctAnswers = history.reduce((acc, test) => acc + (test.correct_answers || 0), 0);
+  const totalQuestions = history.reduce((acc, test) => acc + getTotalQuestions(test), 0);
   const stats = {
-    totalTests: history.length,
-    passedTests: history.filter(test => test.passed).length,
-    correctAnswers: history.reduce((acc, test) => acc + (test.correct_answers || 0), 0),
-    totalQuestions: history.reduce((acc, test) => acc + getTotalQuestions(test), 0)
+    totalTests,
+    passedTests,
+    correctAnswers,
+    totalQuestions,
+    passRate: totalTests ? (passedTests / totalTests) * 100 : 0,
+    averageScore: totalTests ? correctAnswers / totalTests : 0,
   };
 
-  stats.passRate = stats.totalTests ? (stats.passedTests / stats.totalTests) * 100 : 0;
-  stats.averageScore = stats.totalTests ? stats.correctAnswers / stats.totalTests : 0;
-
-  const getSortedAndPaginatedHistory = () => {
+  const getSortedAndPaginatedHistory = (): HistoryEntry[] => {
     const sorted = [...history].sort((a, b) => {
       if (sortConfig.key === 'timestamp' || sortConfig.key === 'created_at') {
         return sortConfig.direction === 'desc'
-          ? new Date(b.created_at) - new Date(a.created_at)
-          : new Date(a.created_at) - new Date(b.created_at);
+          ? new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
+          : new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime();
       }
       if (sortConfig.key === 'correct_answers') {
         return sortConfig.direction === 'desc'
@@ -340,7 +359,7 @@ const History = () => {
   <Select
     value={rowsPerPage}
     onChange={(e) => {
-      setRowsPerPage(parseInt(e.target.value));
+      setRowsPerPage(Number(e.target.value));
       setPage(1);
     }}
     size="small"
@@ -427,7 +446,7 @@ const History = () => {
                                 {resolveQuizLabel(entry)}
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
-                                {new Date(entry.created_at).toLocaleDateString('ro-RO', {
+                                {new Date(entry.created_at ?? '').toLocaleDateString('ro-RO', {
                                   year: 'numeric',
                                   month: 'long',
                                   day: 'numeric',
@@ -505,7 +524,7 @@ const History = () => {
       <Box>
         <Typography variant="h5" gutterBottom={false}>Detalii Test</Typography>
         <Typography variant="caption" color="text.secondary">
-          {new Date(selectedEntry?.created_at).toLocaleDateString('ro-RO', {
+          {new Date(selectedEntry?.created_at ?? '').toLocaleDateString('ro-RO', {
             weekday: 'long',
             year: 'numeric',
             month: 'long',
@@ -593,7 +612,7 @@ const History = () => {
           <Grid item xs={6}>
             <Typography variant="body2" color="text.secondary">Data Test</Typography>
             <Typography variant="h6">
-              {new Date(selectedEntry.created_at).toLocaleDateString('ro-RO', {
+              {new Date(selectedEntry.created_at ?? '').toLocaleDateString('ro-RO', {
                 day: 'numeric',
                 month: 'short',
                 year: 'numeric'
@@ -603,7 +622,7 @@ const History = () => {
           <Grid item xs={6}>
             <Typography variant="body2" color="text.secondary">Ora Test</Typography>
             <Typography variant="h6" color="text.primary">
-              {new Date(selectedEntry.created_at).toLocaleTimeString('ro-RO', {
+              {new Date(selectedEntry.created_at ?? '').toLocaleTimeString('ro-RO', {
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit'

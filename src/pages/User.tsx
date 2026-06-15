@@ -17,7 +17,7 @@ import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase/firebaseConfig';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth-context';
 import Footer from '../components/Footer';
 
 const User = () => {
@@ -27,9 +27,9 @@ const User = () => {
   const [loading, setLoading] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [message, setMessage] = useState(null);
+  const [message, setMessage] = useState<{ type: 'error' | 'success' | 'info'; text: string } | null>(null);
 
-  const handleProfileSave = async (event) => {
+  const handleProfileSave = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!displayName.trim()) {
       setMessage({ type: 'error', text: 'Numele nu poate fi gol.' });
@@ -49,7 +49,7 @@ const User = () => {
     }
   };
 
-  const handleAvatarChange = (event) => {
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!currentUser?.uid) return;
     const file = event.target.files?.[0];
     if (!file) return;

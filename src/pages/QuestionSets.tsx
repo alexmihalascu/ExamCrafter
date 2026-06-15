@@ -32,15 +32,15 @@ import {
   useTheme,
 } from '@mui/material';
 import { Icon } from '@iconify/react';
-import { motion } from 'framer-motion';
 import ListItemText from '@mui/material/ListItemText';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth-context';
 import Footer from '../components/Footer';
 import { db } from '../firebase/firebaseConfig';
 import { fetchAccessibleQuestionSets, fetchAccessibleQuizBundles } from '../services/questionSets';
 import { normalizeRawQuestion, normalizeStoredQuestion, OPTION_KEYS, formatTemplateSample } from '../utils/questionUtils';
+import type { AccessLevel, NormalizedQuestion, QuestionSet, QuizBundle, RawQuestion, SharedUser } from '../types';
 import {
   addDoc,
   arrayRemove,
@@ -69,20 +69,55 @@ const visibilityOptions = [
 const MIN_MANUAL_OPTIONS = 2;
 const MAX_MANUAL_OPTIONS = 6;
 
+interface ManualOption {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+}
+
+interface ManualQuestion {
+  intrebare: string;
+  allowMultiple: boolean;
+  options: ManualOption[];
+}
+
+interface NewSetForm {
+  name: string;
+  description: string;
+  tags: string;
+  visibility: string;
+}
+
+interface BundleForm {
+  name: string;
+  description: string;
+  questionCount: number;
+  visibility: string;
+  selectedSets: string[];
+}
+
+interface SnackbarState {
+  open: boolean;
+  message: string;
+  severity: 'success' | 'error' | 'info' | 'warning';
+}
+
+type QuestionRow = NormalizedQuestion & { id: string; createdAt: Date | null };
+
 const QuestionSets = () => {
   const theme = useTheme();
   const { currentUser } = useAuth();
-  const [questionSets, setQuestionSets] = useState([]);
-  const [activeFilter, setActiveFilter] = useState('owned');
-  const [selectedSet, setSelectedSet] = useState(null);
-  const [selectedSetId, setSelectedSetId] = useState(null);
-  const [questions, setQuestions] = useState([]);
+  const [questionSets, setQuestionSets] = useState<QuestionSet[]>([]);
+  const [activeFilter, setActiveFilter] = useState<AccessLevel>('owned');
+  const [selectedSet, setSelectedSet] = useState<QuestionSet | null>(null);
+  const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
+  const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [loadingSets, setLoadingSets] = useState(true);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [newSetForm, setNewSetForm] = useState({ name: '', description: '', tags: '', visibility: 'private' });
+  const [newSetForm, setNewSetForm] = useState<NewSetForm>({ name: '', description: '', tags: '', visibility: 'private' });
 
-  const ensureAtLeastOneCorrect = (options) => {
+  const ensureAtLeastOneCorrect = (options: ManualOption[]): ManualOption[] => {
     if (options.some((option) => option.isCorrect)) {
       return options;
     }
@@ -92,7 +127,7 @@ const QuestionSets = () => {
     }));
   };
 
-  const createManualQuestionState = () => ({
+  const createManualQuestionState = (): ManualQuestion => ({
     intrebare: '',
     allowMultiple: false,
     options: OPTION_KEYS.slice(0, MIN_MANUAL_OPTIONS).map((id, index) => ({
@@ -102,16 +137,16 @@ const QuestionSets = () => {
     })),
   });
 
-  const [manualQuestion, setManualQuestion] = useState(createManualQuestionState());
+  const [manualQuestion, setManualQuestion] = useState<ManualQuestion>(createManualQuestionState());
   const [shareEmail, setShareEmail] = useState('');
-  const [shareSuggestions, setShareSuggestions] = useState([]);
+  const [shareSuggestions, setShareSuggestions] = useState<SharedUser[]>([]);
   const [shareSearchLoading, setShareSearchLoading] = useState(false);
-  const shareSearchTimeoutRef = useRef(null);
+  const shareSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [importing, setImporting] = useState(false);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [quizBundles, setQuizBundles] = useState([]);
+  const [snackbar, setSnackbar] = useState<SnackbarState>({ open: false, message: '', severity: 'success' });
+  const [quizBundles, setQuizBundles] = useState<QuizBundle[]>([]);
   const [bundleDialogOpen, setBundleDialogOpen] = useState(false);
-  const [bundleForm, setBundleForm] = useState({
+  const [bundleForm, setBundleForm] = useState<BundleForm>({
     name: '',
     description: '',
     questionCount: 40,
@@ -130,7 +165,7 @@ const QuestionSets = () => {
     setManualQuestion(createManualQuestionState());
   };
 
-  const updateManualOption = (optionId, updates) => {
+  const updateManualOption = (optionId: string, updates: Partial<ManualOption>) => {
     setManualQuestion((prev) => {
       const nextOptions = prev.options.map((option) =>
         option.id === optionId ? { ...option, ...updates } : option
@@ -163,7 +198,7 @@ const QuestionSets = () => {
     });
   };
 
-  const removeManualOption = (optionId) => {
+  const removeManualOption = (optionId: string) => {
     setManualQuestion((prev) => {
       if (prev.options.length <= MIN_MANUAL_OPTIONS) {
         return prev;
@@ -176,7 +211,7 @@ const QuestionSets = () => {
     });
   };
 
-  const handleSnackbar = useCallback((message, severity = 'success') => {
+  const handleSnackbar = useCallback((message: string, severity: SnackbarState['severity'] = 'success') => {
     setSnackbar({ open: true, message, severity });
   }, []);
 
@@ -346,7 +381,7 @@ const QuestionSets = () => {
   }, [fetchQuizBundles]);
 
   const loadQuestions = useCallback(
-    async (set) => {
+    async (set: QuestionSet | null) => {
       if (!set) return;
       setLoadingQuestions(true);
       try {
@@ -354,14 +389,18 @@ const QuestionSets = () => {
         const q = firestoreQuery(questionsRef, orderBy('createdAt', 'desc'));
         const snapshot = await getDocs(q);
 
-        const parsed = snapshot.docs.map((docSnap) => {
-          const data = normalizeStoredQuestion(docSnap.data());
-          return {
-            id: docSnap.id,
-            ...data,
-            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : null,
-          };
-        });
+        const parsed = snapshot.docs
+          .map((docSnap): QuestionRow | null => {
+            const data = normalizeStoredQuestion(docSnap.data());
+            if (!data) return null;
+            const rawCreatedAt = data.createdAt as { toDate?: () => Date } | undefined;
+            return {
+              ...data,
+              id: docSnap.id,
+              createdAt: rawCreatedAt?.toDate ? rawCreatedAt.toDate() : null,
+            };
+          })
+          .filter((row): row is QuestionRow => row !== null);
 
         setQuestions(parsed);
       } catch (error) {
@@ -382,12 +421,12 @@ const QuestionSets = () => {
     }
   }, [selectedSet, loadQuestions]);
 
-  const handleSetSelection = (set) => {
+  const handleSetSelection = (set: QuestionSet) => {
     setSelectedSetId(set.id);
     setSelectedSet(set);
   };
 
-  const handleCreateSet = async (event) => {
+  const handleCreateSet = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!currentUser) return;
 
@@ -429,7 +468,7 @@ const QuestionSets = () => {
     }
   };
 
-  const handleManualQuestionAdd = async (event) => {
+  const handleManualQuestionAdd = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!selectedSet || !currentUser) return;
 
@@ -465,9 +504,9 @@ const QuestionSets = () => {
     const allowMultiple = manualQuestion.allowMultiple || correctAnswers.length > 1;
 
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         intrebare: trimmedQuestion,
-        options: trimmedOptions.map(({ isCorrect, ...option }) => option),
+        options: trimmedOptions.map(({ isCorrect: _isCorrect, ...option }) => option),
         correctAnswers,
         allowMultiple,
         raspuns_corect: correctAnswers.join(','),
@@ -496,7 +535,7 @@ const QuestionSets = () => {
     }
   };
 
-  const handleCreateBundle = async (event) => {
+  const handleCreateBundle = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!currentUser) return;
 
@@ -561,7 +600,7 @@ const QuestionSets = () => {
     }
   };
 
-const handleFileImport = async (event) => {
+const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !selectedSet) {
       return;
@@ -573,7 +612,7 @@ const handleFileImport = async (event) => {
       setImporting(false);
     };
 
-    const persistQuestions = async (normalizedQuestions) => {
+    const persistQuestions = async (normalizedQuestions: NormalizedQuestion[]) => {
       if (!normalizedQuestions.length) {
         handleSnackbar('Fisierul nu contine intrebari valide.', 'warning');
         return;
@@ -585,7 +624,7 @@ const handleFileImport = async (event) => {
         batch.set(questionRef, {
           ...question,
           createdAt: Timestamp.now(),
-          createdBy: currentUser.uid,
+          createdBy: currentUser?.uid ?? null,
         });
       });
 
@@ -613,9 +652,11 @@ const handleFileImport = async (event) => {
       if (file.name.endsWith('.csv')) {
         Papa.parse(file, {
           header: true,
-          complete: async (results) => {
+          complete: async (results: Papa.ParseResult<RawQuestion>) => {
             try {
-              const normalized = results.data.map(normalizeRawQuestion).filter(Boolean);
+              const normalized = results.data
+                .map(normalizeRawQuestion)
+                .filter((q): q is NormalizedQuestion => Boolean(q));
               await persistQuestions(normalized);
             } catch (error) {
               console.error('Error parsing CSV:', error);
@@ -624,7 +665,7 @@ const handleFileImport = async (event) => {
               resetInput();
             }
           },
-          error: (error) => {
+          error: (error: Error) => {
             console.error('Error parsing CSV:', error);
             handleSnackbar('Nu s-a putut parsa fisierul CSV.', 'error');
             resetInput();
@@ -638,8 +679,10 @@ const handleFileImport = async (event) => {
         const workbook = XLSX.read(arrayBuffer);
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const rows = XLSX.utils.sheet_to_json(worksheet);
-        const normalized = rows.map(normalizeRawQuestion).filter(Boolean);
+        const rows = XLSX.utils.sheet_to_json<RawQuestion>(worksheet);
+        const normalized = rows
+          .map(normalizeRawQuestion)
+          .filter((q): q is NormalizedQuestion => Boolean(q));
         await persistQuestions(normalized);
         resetInput();
         return;
@@ -654,7 +697,7 @@ const handleFileImport = async (event) => {
     }
   };
 
-  const triggerDownload = (blob, filename) => {
+  const triggerDownload = (blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -663,9 +706,9 @@ const handleFileImport = async (event) => {
     URL.revokeObjectURL(url);
   };
 
-  const downloadTemplate = (format) => {
+  const downloadTemplate = (format: 'json' | 'csv' | 'xlsx') => {
     const template = formatTemplateSample();
-    const baseRow = {
+    const baseRow: Record<string, string> = {
       intrebare: template.intrebare,
       allowMultiple: template.allowMultiple ? 'true' : 'false',
     };
@@ -702,7 +745,7 @@ const handleFileImport = async (event) => {
     triggerDownload(blob, 'examcrafter-template.xlsx');
   };
 
-  const handleShareAdd = async (emailOverride) => {
+  const handleShareAdd = async (emailOverride?: string) => {
     if (!selectedSet) return;
     const rawValue = (emailOverride ?? shareEmail).trim();
     if (!rawValue) return;
@@ -728,7 +771,7 @@ const handleFileImport = async (event) => {
     }
   };
 
-  const handleShareRemove = async (email) => {
+  const handleShareRemove = async (email: string) => {
     if (!selectedSet) return;
 
     try {
@@ -744,7 +787,7 @@ const handleFileImport = async (event) => {
     }
   };
 
-  const handleQuestionDelete = async (questionId) => {
+  const handleQuestionDelete = async (questionId: string) => {
     if (!selectedSet || !questionId) return;
     try {
       await deleteDoc(doc(db, 'questionSets', selectedSet.id, 'questions', questionId));
@@ -761,7 +804,7 @@ const handleFileImport = async (event) => {
     }
   };
 
-  const renderSetCard = (set) => (
+  const renderSetCard = (set: QuestionSet) => (
     <Grid item xs={12} md={6} key={set.id}>
       <Card
         sx={{
@@ -1025,13 +1068,8 @@ const handleFileImport = async (event) => {
                                 ? question.options
                                 : OPTION_KEYS.map((key) => {
                                     const text = question[`varianta_${key}`];
-                                    return text
-                                      ? {
-                                          id: key,
-                                          text,
-                                        }
-                                      : null;
-                                  }).filter(Boolean);
+                                    return text ? { id: key, text: String(text) } : null;
+                                  }).filter((opt): opt is { id: string; text: string } => Boolean(opt));
                             const correctAnswers = question.correctAnswers && question.correctAnswers.length
                               ? question.correctAnswers
                               : (question.raspuns_corect || '')
@@ -1188,7 +1226,7 @@ const handleFileImport = async (event) => {
                         />
                         <Button
                           variant="contained"
-                          onClick={handleShareAdd}
+                          onClick={() => handleShareAdd()}
                           disabled={!isOwner || !shareEmail.trim()}
                           startIcon={<Icon icon="mdi:account-plus" />}
                         >
@@ -1242,7 +1280,7 @@ const handleFileImport = async (event) => {
                             </Stack>
                           ) : (
                             <Typography variant="body2" color="text.secondary">
-                              Nu am gasit utilizatori pentru "{shareEmail.trim()}".
+                              Nu am gasit utilizatori pentru &quot;{shareEmail.trim()}&quot;.
                             </Typography>
                           )}
                         </Paper>
@@ -1371,9 +1409,10 @@ const handleFileImport = async (event) => {
                 }
                 SelectProps={{
                   multiple: true,
-                  renderValue: (selected) => {
+                  renderValue: (selected: unknown) => {
+                    const ids = selected as string[];
                     const labels = questionSets
-                      .filter((set) => selected.includes(set.id))
+                      .filter((set) => ids.includes(set.id))
                       .map((set) => set.name);
                     return labels.length ? labels.join(', ') : 'Neselectat';
                   },

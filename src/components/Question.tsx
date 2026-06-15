@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import {
   Typography,
   Box,
@@ -11,32 +11,37 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { motion } from 'framer-motion';
 import { OPTION_KEYS } from '../utils/questionUtils';
+import type { NormalizedQuestion, QuestionOption } from '../types';
 
-const normalizeOptions = (question) => {
+type AnswerValue = string | string[];
+
+interface QuestionProps {
+  question: NormalizedQuestion;
+  onAnswerChange: (questionId: string, value: AnswerValue) => void;
+  selectedAnswer?: AnswerValue;
+  answerSubmitted: boolean;
+}
+
+const normalizeOptions = (question: NormalizedQuestion): QuestionOption[] => {
   if (Array.isArray(question?.options) && question.options.length) {
     return question.options.map((opt, index) => ({
       id: opt.id || OPTION_KEYS[index] || `opt${index}`,
-      text: opt.text ?? opt.value ?? '',
+      text: opt.text ?? '',
     }));
   }
 
   return OPTION_KEYS.map((key) => {
     const variant = question?.[`varianta_${key}`];
-    return variant
-      ? {
-          id: key,
-          text: variant,
-        }
-      : null;
-  }).filter(Boolean);
+    return variant ? { id: key, text: String(variant) } : null;
+  }).filter((opt): opt is QuestionOption => Boolean(opt));
 };
 
-const Question = ({ question, onAnswerChange, selectedAnswer, answerSubmitted }) => {
+const Question = ({ question, onAnswerChange, selectedAnswer, answerSubmitted }: QuestionProps) => {
   const theme = useTheme();
   const options = useMemo(() => normalizeOptions(question), [question]);
   const allowMultiple = question?.allowMultiple || (question?.correctAnswers?.length || 0) > 1;
 
-  const normalizedSelected = useMemo(() => {
+  const normalizedSelected = useMemo<string[]>(() => {
     if (Array.isArray(selectedAnswer)) {
       return selectedAnswer;
     }
@@ -46,7 +51,7 @@ const Question = ({ question, onAnswerChange, selectedAnswer, answerSubmitted })
     return [];
   }, [selectedAnswer]);
 
-  const correctAnswers = useMemo(() => {
+  const correctAnswers = useMemo<string[]>(() => {
     if (Array.isArray(question?.correctAnswers) && question.correctAnswers.length) {
       return question.correctAnswers.map((ans) => ans.toLowerCase());
     }
@@ -56,7 +61,7 @@ const Question = ({ question, onAnswerChange, selectedAnswer, answerSubmitted })
     return fallback.length ? fallback : [question?.varianta_corecta || 'a'];
   }, [question]);
 
-  const getColors = (optionId) => {
+  const getColors = (optionId: string) => {
     if (!answerSubmitted) {
       return {
         border: normalizedSelected.includes(optionId) ? theme.palette.primary.main : theme.palette.divider,
@@ -88,16 +93,17 @@ const Question = ({ question, onAnswerChange, selectedAnswer, answerSubmitted })
     };
   };
 
-  const handleSelect = (optionId) => {
+  const handleSelect = (optionId: string) => {
     if (answerSubmitted) return;
 
+    const questionId = question.id as string;
     if (allowMultiple) {
       const nextSelection = normalizedSelected.includes(optionId)
         ? normalizedSelected.filter((id) => id !== optionId)
         : [...normalizedSelected, optionId];
-      onAnswerChange(question.id, nextSelection);
+      onAnswerChange(questionId, nextSelection);
     } else {
-      onAnswerChange(question.id, optionId);
+      onAnswerChange(questionId, optionId);
     }
   };
 

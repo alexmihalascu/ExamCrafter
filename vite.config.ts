@@ -39,7 +39,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 900,
     rollupOptions: {
       output: {
-        manualChunks(id) {
+        manualChunks(id: string) {
           if (!id.includes('node_modules')) return undefined;
           if (id.includes('firebase') || id.includes('@firebase')) return 'firebase';
           if (id.includes('apexcharts')) return 'charts';

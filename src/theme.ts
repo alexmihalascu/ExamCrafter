@@ -1,4 +1,7 @@
 import { alpha, createTheme } from '@mui/material/styles';
+import type { PaletteOptions, ThemeOptions, Shadows } from '@mui/material/styles';
+
+type Mode = 'light' | 'dark';
 
 // ---------------------------------------------------------------------------
 // ExamCrafter - editorial, single-accent design system.
@@ -8,8 +11,6 @@ import { alpha, createTheme } from '@mui/material/styles';
 
 const display = "'Space Grotesk', 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const body = "'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-const mono = "'Geist Mono', 'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace";
-
 const typography = {
   fontFamily: body,
   h1: { fontFamily: display, fontSize: '3rem', fontWeight: 600, letterSpacing: '-0.03em', lineHeight: 1.05 },
@@ -56,9 +57,9 @@ const palettes = {
 };
 
 // Soft, tinted shadow scale (cool ink rather than pure black).
-const makeShadows = (mode) => {
+const makeShadows = (mode: Mode): Shadows => {
   const c = mode === 'light' ? '23, 24, 33' : '0, 0, 0';
-  const s = (y, b, a) => `0px ${y}px ${b}px rgba(${c}, ${a})`;
+  const s = (y: number, b: number, a: number) => `0px ${y}px ${b}px rgba(${c}, ${a})`;
   return [
     'none',
     s(1, 2, mode === 'light' ? 0.04 : 0.3),
@@ -67,10 +68,10 @@ const makeShadows = (mode) => {
     s(8, 24, mode === 'light' ? 0.08 : 0.44),
     s(14, 36, mode === 'light' ? 0.1 : 0.5),
     ...Array(19).fill(s(18, 48, mode === 'light' ? 0.12 : 0.55)),
-  ];
+  ] as unknown as Shadows;
 };
 
-const buildComponents = (mode) => {
+const buildComponents = (mode: Mode) => {
   const isLight = mode === 'light';
   const p = palettes[mode];
   const focusRing = `0 0 0 3px ${alpha(p.primary.main, isLight ? 0.28 : 0.4)}`;
@@ -180,14 +181,13 @@ const buildComponents = (mode) => {
   };
 };
 
-const buildTheme = (mode) =>
+const buildTheme = (mode: Mode) =>
   createTheme({
-    palette: palettes[mode],
-    typography,
+    palette: palettes[mode] as PaletteOptions,
+    typography: typography as ThemeOptions['typography'],
     shape: { borderRadius: 12 },
     shadows: makeShadows(mode),
-    components: buildComponents(mode),
-    custom: { mono },
+    components: buildComponents(mode) as ThemeOptions['components'],
   });
 
 export const lightTheme = buildTheme('light');

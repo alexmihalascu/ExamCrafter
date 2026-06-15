@@ -4,7 +4,8 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import { ThemeProvider, CssBaseline, Box, CircularProgress } from '@mui/material';
 import Navbar from './components/Navbar';
 import { lightTheme, darkTheme } from './theme';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
+import { useAuth } from './contexts/auth-context';
 
 // Route-level code splitting keeps the initial bundle lean.
 const Main = lazy(() => import('./pages/Main'));
@@ -21,18 +22,23 @@ const RouteFallback = () => (
   </Box>
 );
 
-const ProtectedRoute = ({ children, adminOnly = false }) => {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  adminOnly?: boolean;
+}
+
+const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) => {
   const { currentUser, isAdmin } = useAuth();
   if (!currentUser) return <Navigate to="/sign-in" replace />;
   if (adminOnly && !isAdmin()) return <Navigate to="/main" replace />;
-  return children;
+  return <>{children}</>;
 };
 
 const AppContent = () => {
   const { currentUser } = useAuth();
-  const [darkMode, setDarkMode] = useState(() => {
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
     const saved = localStorage.getItem('darkMode');
-    return saved ? JSON.parse(saved) : false;
+    return saved ? Boolean(JSON.parse(saved)) : false;
   });
 
   const theme = useMemo(() => (darkMode ? darkTheme : lightTheme), [darkMode]);

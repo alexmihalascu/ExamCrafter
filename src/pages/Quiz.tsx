@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../contexts/auth-context';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase/firebaseConfig';
 import { collection, addDoc, getDocs } from 'firebase/firestore';
@@ -22,8 +22,11 @@ import QuizSelection from '../components/QuizSelection';
 import QuizResults from '../components/QuizResults';
 import { fetchAccessibleQuestionSets, fetchAccessibleQuizBundles } from '../services/questionSets';
 import { normalizeStoredQuestion } from '../utils/questionUtils';
+import type { NormalizedQuestion, QuestionSet, QuizBundle, QuizSourceMeta, RawQuestion } from '../types';
 
-const shuffleArray = (items) => {
+type AnswerMap = Record<string, string | string[]>;
+
+const shuffleArray = <T,>(items: T[]): T[] => {
   const list = [...items];
   for (let i = list.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -32,7 +35,7 @@ const shuffleArray = (items) => {
   return list;
 };
 
-const getQuizStateKey = (uid) => (uid ? `quizState_${uid}` : null);
+const getQuizStateKey = (uid?: string | null) => (uid ? `quizState_${uid}` : null);
 const LEGACY_QUIZ_STATE_KEY = 'quizState';
 
 const Quiz = () => {
@@ -40,13 +43,13 @@ const Quiz = () => {
   const navigate = useNavigate();
   const theme = useTheme();
 
-  const [questionSets, setQuestionSets] = useState([]);
+  const [questionSets, setQuestionSets] = useState<QuestionSet[]>([]);
   const [setsLoading, setSetsLoading] = useState(true);
   const [isQuizActive, setIsQuizActive] = useState(false);
-  const [questions, setQuestions] = useState([]);
+  const [questions, setQuestions] = useState<NormalizedQuestion[]>([]);
   const [quizType, setQuizType] = useState('');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState({});
+  const [answers, setAnswers] = useState<AnswerMap>({});
   const [score, setScore] = useState(0);
   const [incorrectAnswers, setIncorrectAnswers] = useState(0);
   const [timer, setTimer] = useState(60);
@@ -56,10 +59,10 @@ const Quiz = () => {
   const [answerSubmitted, setAnswerSubmitted] = useState(false);
   const [isStateLoaded, setIsStateLoaded] = useState(false);
   const [showQuizSelection, setShowQuizSelection] = useState(false);
-  const [activeSetMeta, setActiveSetMeta] = useState(null);
-  const [quizBundles, setQuizBundles] = useState([]);
+  const [activeSetMeta, setActiveSetMeta] = useState<QuizSourceMeta | null>(null);
+  const [quizBundles, setQuizBundles] = useState<QuizBundle[]>([]);
   const [bundlesLoading, setBundlesLoading] = useState(true);
-  const [activeBundleMeta, setActiveBundleMeta] = useState(null);
+  const [activeBundleMeta, setActiveBundleMeta] = useState<QuizSourceMeta | null>(null);
 
 useEffect(() => {
   const loadSets = async () => {
@@ -98,7 +101,8 @@ useEffect(() => {
   useEffect(() => {
     const hydrateState = () => {
       const storageKey = getQuizStateKey(currentUser?.uid);
-      let savedState = null;
+      // Persisted quiz state is untyped JSON, normalized again on load.
+      let savedState: any = null;
 
       if (storageKey) {
         const stored = localStorage.getItem(storageKey);
@@ -118,7 +122,11 @@ useEffect(() => {
       }
 
       if (savedState && savedState.quizType) {
-        setQuestions((savedState.questions || []).map((question) => normalizeStoredQuestion(question)));
+        setQuestions(
+          ((savedState.questions || []) as RawQuestion[])
+            .map((question) => normalizeStoredQuestion(question))
+            .filter((q): q is NormalizedQuestion => Boolean(q))
+        );
         setQuizType(savedState.quizType || '');
         setCurrentQuestionIndex(savedState.currentQuestionIndex || 0);
         setAnswers(savedState.answers || {});
@@ -189,22 +197,7 @@ useEffect(() => {
     currentUser,
   ]);
 
-  useEffect(() => {
-    if (timer > 0 && !answerSubmitted && isQuizActive) {
-      const interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
-      return () => clearInterval(interval);
-    }
-    if (timer === 0 && !answerSubmitted && isQuizActive) {
-      handleSubmitAnswer();
-    }
-    return undefined;
-  }, [timer, answerSubmitted, isQuizActive]);
-
-  const handleQuestionAnswerChange = (questionId, value) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: value }));
-  };
-
-  const handleSubmitAnswer = () => {
+  const handleSubmitAnswer = useCallback(() => {
     const currentQuestion = questions[currentQuestionIndex];
     const expectedAnswers = (currentQuestion.correctAnswers?.length
       ? currentQuestion.correctAnswers
@@ -213,7 +206,7 @@ useEffect(() => {
       : []
     ).sort();
 
-    const userAnswerRaw = answers[currentQuestion.id];
+    const userAnswerRaw = answers[currentQuestion.id as string];
     const userAnswers = Array.isArray(userAnswerRaw)
       ? userAnswerRaw
       : userAnswerRaw
@@ -233,6 +226,21 @@ useEffect(() => {
     }
 
     setAnswerSubmitted(true);
+  }, [questions, currentQuestionIndex, answers]);
+
+  useEffect(() => {
+    if (timer > 0 && !answerSubmitted && isQuizActive) {
+      const interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
+      return () => clearInterval(interval);
+    }
+    if (timer === 0 && !answerSubmitted && isQuizActive) {
+      handleSubmitAnswer();
+    }
+    return undefined;
+  }, [timer, answerSubmitted, isQuizActive, handleSubmitAnswer]);
+
+  const handleQuestionAnswerChange = (questionId: string, value: string | string[]) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: value }));
   };
 
   const handleNextQuestion = () => {
@@ -246,7 +254,15 @@ useEffect(() => {
     }
   };
 
-  const startQuizFromSet = async ({ setId, questionCount, randomize }) => {
+  const startQuizFromSet = async ({
+    setId,
+    questionCount,
+    randomize,
+  }: {
+    setId: string;
+    questionCount: number;
+    randomize: boolean;
+  }) => {
     const selectedSet = questionSets.find((set) => set.id === setId);
     if (!selectedSet) {
       alert('Setul selectat nu mai este disponibil.');
@@ -265,7 +281,9 @@ useEffect(() => {
         fetchedQuestions = shuffleArray(fetchedQuestions);
       }
 
-      const normalizedQuestions = fetchedQuestions.map((question) => normalizeStoredQuestion(question));
+      const normalizedQuestions = fetchedQuestions
+        .map((question) => normalizeStoredQuestion(question))
+        .filter((q): q is NormalizedQuestion => Boolean(q));
       const limitedQuestions = normalizedQuestions.slice(0, Math.min(questionCount, normalizedQuestions.length));
 
       if (!limitedQuestions.length) {
@@ -324,7 +342,15 @@ useEffect(() => {
     }
   };
 
-  const startQuizFromBundle = async ({ bundle, questionCount, randomize }) => {
+  const startQuizFromBundle = async ({
+    bundle,
+    questionCount,
+    randomize,
+  }: {
+    bundle: QuizBundle;
+    questionCount: number;
+    randomize: boolean;
+  }) => {
     if (!bundle?.setIds?.length) {
       alert('Aceasta grila nu contine dataset-uri selectate.');
       return;
@@ -336,7 +362,7 @@ useEffect(() => {
         bundle.setIds.map((setId) => getDocs(collection(db, 'questionSets', setId, 'questions')))
       );
 
-      let combinedQuestions = [];
+      let combinedQuestions: Array<Record<string, unknown>> = [];
       snapshots.forEach((snapshot, index) => {
         const setId = bundle.setIds[index];
         const extracted = snapshot.docs.map((docSnap) => ({
@@ -346,7 +372,9 @@ useEffect(() => {
         combinedQuestions = combinedQuestions.concat(extracted);
       });
 
-      let normalized = combinedQuestions.map((question) => normalizeStoredQuestion(question));
+      let normalized = combinedQuestions
+        .map((question) => normalizeStoredQuestion(question))
+        .filter((q): q is NormalizedQuestion => Boolean(q));
       if (!normalized.length) {
         alert('Seturile din aceasta grila nu contin inca intrebari.');
         setLoading(false);
@@ -501,7 +529,6 @@ useEffect(() => {
       <QuizResults
         score={score}
         totalQuestions={questions.length}
-        incorrectAnswers={incorrectAnswers}
         onRestart={handleRestartQuiz}
         passed={passed}
         questionSetName={activeSetMeta?.name}
@@ -530,7 +557,7 @@ useEffect(() => {
       : 'Set personal'
     : 'Chestionar selectat';
 
-  const currentSelection = answers[currentQuestion?.id] || null;
+  const currentSelection = currentQuestion ? answers[currentQuestion.id as string] || null : null;
   const hasSelection = Array.isArray(currentSelection) ? currentSelection.length > 0 : Boolean(currentSelection);
 
   return (
@@ -605,7 +632,7 @@ useEffect(() => {
             {currentQuestion ? (
               <Question
                 question={currentQuestion}
-                selectedAnswer={answers[currentQuestion.id]}
+                selectedAnswer={answers[currentQuestion.id as string]}
                 onAnswerChange={handleQuestionAnswerChange}
                 answerSubmitted={answerSubmitted}
               />

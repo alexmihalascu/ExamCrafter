@@ -22,7 +22,7 @@ import {
 import { alpha } from '@mui/material/styles';
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth-context';
 import logo from '/android-chrome-192x192.png';
 
 const menuItems = [
@@ -32,16 +32,21 @@ const menuItems = [
   { path: '/sets', label: 'Seturi', icon: 'ph:folders' },
 ];
 
-const Navbar = ({ darkMode, toggleDarkMode }) => {
+interface NavbarProps {
+  darkMode: boolean;
+  toggleDarkMode: () => void;
+}
+
+const Navbar = ({ darkMode, toggleDarkMode }: NavbarProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [accountAnchorEl, setAccountAnchorEl] = useState(null);
+  const [accountAnchorEl, setAccountAnchorEl] = useState<HTMLElement | null>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, logout } = useAuth();
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path: string) => location.pathname === path;
 
   const handleLogout = async () => {
     setAccountAnchorEl(null);

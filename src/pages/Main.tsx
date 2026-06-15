@@ -6,10 +6,11 @@ import { useEffect, useState } from 'react';
 import * as countUpExports from 'react-countup';
 import { useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth-context';
 import { db } from '../firebase/firebaseConfig';
+import { interopDefault } from '../utils/interop';
 
-const CountUp = countUpExports.default?.default || countUpExports.default || countUpExports;
+const CountUp = interopDefault(countUpExports);
 
 const features = [
   {
@@ -29,7 +30,7 @@ const features = [
   },
 ];
 
-const Stat = ({ value, label }) => (
+const Stat = ({ value, label }: { value: number; label: string }) => (
   <Box>
     <Typography
       className="tabular-nums"

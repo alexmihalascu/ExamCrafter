@@ -21,8 +21,31 @@ import {
 } from '@mui/material';
 import { Icon } from '@iconify/react';
 import { motion } from 'framer-motion';
+import type { QuestionSet, QuizBundle } from '../types';
 
 const DEFAULT_QUESTION_COUNT = 20;
+
+interface StartSetArgs {
+  setId: string;
+  questionCount: number;
+  randomize: boolean;
+}
+
+interface StartBundleArgs {
+  bundle: QuizBundle;
+  questionCount: number;
+  randomize: boolean;
+}
+
+interface QuizSelectionProps {
+  questionSets: QuestionSet[];
+  quizBundles?: QuizBundle[];
+  loading: boolean;
+  bundlesLoading?: boolean;
+  onStart: (args: StartSetArgs) => void;
+  onStartBundle: (args: StartBundleArgs) => void;
+  onManageSets: () => void;
+}
 
 const QuizSelection = ({
   questionSets,
@@ -32,8 +55,8 @@ const QuizSelection = ({
   onStart,
   onStartBundle,
   onManageSets,
-}) => {
-  const [view, setView] = useState('bundles');
+}: QuizSelectionProps) => {
+  const [view, setView] = useState<'sets' | 'bundles'>('bundles');
   const [selectedSetId, setSelectedSetId] = useState('');
   const [selectedBundleId, setSelectedBundleId] = useState('');
   const [questionCount, setQuestionCount] = useState(DEFAULT_QUESTION_COUNT);
@@ -133,7 +156,7 @@ const QuizSelection = ({
     });
   };
 
-  const renderSetCard = (set) => {
+  const renderSetCard = (set: QuestionSet) => {
     const isSelected = selectedSetId === set.id;
     return (
       <Grid size={{ xs: 12, md: 6 }} key={set.id}>
@@ -184,7 +207,7 @@ const QuizSelection = ({
     );
   };
 
-  const renderBundleCard = (bundle) => {
+  const renderBundleCard = (bundle: QuizBundle) => {
     const isSelected = selectedBundleId === bundle.id;
     return (
       <Grid size={{ xs: 12, md: 6 }} key={bundle.id}>
@@ -266,7 +289,7 @@ const QuizSelection = ({
             </Typography>
             <Slider
               value={Math.min(questionCount, maxQuestions)}
-              onChange={(_, value) => setQuestionCount(value)}
+              onChange={(_, value) => setQuestionCount(value as number)}
               min={1}
               max={maxQuestions}
               step={1}
@@ -325,7 +348,7 @@ const QuizSelection = ({
             </Typography>
             <Slider
               value={Math.min(bundleQuestionCount, max)}
-              onChange={(_, value) => setBundleQuestionCount(value)}
+              onChange={(_, value) => setBundleQuestionCount(value as number)}
               min={1}
               max={max}
               step={1}
@@ -389,7 +412,7 @@ const QuizSelection = ({
               value={view}
               onChange={(_, value) => {
                 userViewChangedRef.current = true;
-                setView(value);
+                setView(value as 'sets' | 'bundles');
               }}
               variant="scrollable"
               scrollButtons="auto"

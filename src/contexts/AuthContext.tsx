@@ -1,30 +1,23 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   signOut,
   onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
-  updateProfile
+  updateProfile,
 } from 'firebase/auth';
+import type { User, UserCredential } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase/firebaseConfig';
+import { AuthContext } from './auth-context';
+import type { AuthContextValue, UpdateProfilePayload } from './auth-context';
 
-const AuthContext = createContext();
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-export const AuthProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [userRole, setUserRole] = useState(null);
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const syncUserDocument = async (user) => {
+  const syncUserDocument = async (user: User | null) => {
     if (!user?.uid) return;
 
     const userDocRef = doc(db, 'users', user.uid);
@@ -51,25 +44,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Sign in with Google
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (): Promise<UserCredential> => {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     const userCredential = await signInWithPopup(auth, provider);
     await syncUserDocument(userCredential.user);
-
     return userCredential;
   };
 
-  // Sign out
-  const logout = () => {
-    return signOut(auth);
-  };
+  const logout = (): Promise<void> => signOut(auth);
 
-  const updateUserProfile = async ({ displayName, photoURL }) => {
+  const updateUserProfile = async ({ displayName, photoURL }: UpdateProfilePayload) => {
     if (!auth.currentUser) return;
 
-    const profileUpdates = {};
+    const profileUpdates: UpdateProfilePayload = {};
     if (typeof displayName === 'string') {
       profileUpdates.displayName = displayName.trim();
     }
@@ -98,31 +86,26 @@ export const AuthProvider = ({ children }) => {
       { merge: true }
     );
 
-    setCurrentUser({ ...auth.currentUser });
+    setCurrentUser({ ...auth.currentUser } as User);
   };
 
-  // Check if user is admin
-  const isAdmin = () => {
-    return userRole === 'admin';
-  };
+  const isAdmin = (): boolean => userRole === 'admin';
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
-
       if (user) {
         await syncUserDocument(user);
       } else {
         setUserRole(null);
       }
-
       setLoading(false);
     });
 
     return unsubscribe;
   }, []);
 
-  const value = {
+  const value: AuthContextValue = {
     currentUser,
     userRole,
     isAdmin,
@@ -132,9 +115,5 @@ export const AuthProvider = ({ children }) => {
     loading,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
 };

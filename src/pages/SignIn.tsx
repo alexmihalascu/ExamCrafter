@@ -3,7 +3,7 @@ import { Alert, Box, Button, Container, Divider, Grid, Paper, Stack, Typography 
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth-context';
 
 const highlights = [
   {

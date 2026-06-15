@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Box,
   Typography,
@@ -13,15 +12,30 @@ import { motion } from 'framer-motion';
 import * as chartExports from 'react-apexcharts';
 import * as countUpExports from 'react-countup';
 import { useTheme } from '@mui/material/styles';
+import { interopDefault } from '../utils/interop';
+import type { AccessLevel, Visibility } from '../types';
 
-const Chart = chartExports.default?.default || chartExports.default || chartExports;
-const CountUp = countUpExports.default?.default || countUpExports.default || countUpExports;
+const Chart = interopDefault(chartExports);
+const CountUp = interopDefault(countUpExports);
 
-const accessMap = {
+const accessMap: Record<AccessLevel, string> = {
   owned: 'Set personal',
   shared: 'Set partajat',
   public: 'Set public',
 };
+
+interface QuizResultsProps {
+  score: number;
+  totalQuestions: number;
+  onRestart: () => void;
+  passed: boolean;
+  questionSetName?: string;
+  questionSetAccess?: AccessLevel;
+  questionSetVisibility?: Visibility;
+  questionBundleName?: string;
+  questionBundleAccess?: AccessLevel;
+  questionBundleVisibility?: Visibility;
+}
 
 const QuizResults = ({
   score,
@@ -34,7 +48,7 @@ const QuizResults = ({
   questionBundleName,
   questionBundleAccess,
   questionBundleVisibility,
-}) => {
+}: QuizResultsProps) => {
   const theme = useTheme();
   const incorrectAnswers = totalQuestions - score;
   const accessLabel = questionSetAccess ? accessMap[questionSetAccess] || 'Set personal' : null;
