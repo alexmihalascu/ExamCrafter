@@ -136,18 +136,18 @@ const QuizSelection = ({
   const renderSetCard = (set) => {
     const isSelected = selectedSetId === set.id;
     return (
-      <Grid item xs={12} md={6} key={set.id}>
+      <Grid size={{ xs: 12, md: 6 }} key={set.id}>
         <Card
           component={motion.div}
-          whileHover={{ scale: 1.01 }}
+          whileHover={{ y: -3 }}
           onClick={() => setSelectedSetId(set.id)}
           sx={{
             cursor: 'pointer',
-            borderRadius: 3,
-            border: isSelected ? `2px solid` : '1px solid',
+            height: '100%',
+            border: '1px solid',
             borderColor: isSelected ? 'primary.main' : 'divider',
-            boxShadow: isSelected ? 6 : 1,
-            transition: 'all 0.2s ease',
+            bgcolor: isSelected ? (t) => `${t.palette.primary.main}0A` : 'background.paper',
+            transition: 'border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease',
           }}
         >
           <CardContent>
@@ -187,18 +187,18 @@ const QuizSelection = ({
   const renderBundleCard = (bundle) => {
     const isSelected = selectedBundleId === bundle.id;
     return (
-      <Grid item xs={12} md={6} key={bundle.id}>
+      <Grid size={{ xs: 12, md: 6 }} key={bundle.id}>
         <Card
           component={motion.div}
-          whileHover={{ scale: 1.01 }}
+          whileHover={{ y: -3 }}
           onClick={() => setSelectedBundleId(bundle.id)}
           sx={{
             cursor: 'pointer',
-            borderRadius: 3,
-            border: isSelected ? `2px solid` : '1px solid',
+            height: '100%',
+            border: '1px solid',
             borderColor: isSelected ? 'primary.main' : 'divider',
-            boxShadow: isSelected ? 6 : 1,
-            transition: 'all 0.2s ease',
+            bgcolor: isSelected ? (t) => `${t.palette.primary.main}0A` : 'background.paper',
+            transition: 'border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease',
           }}
         >
           <CardContent>

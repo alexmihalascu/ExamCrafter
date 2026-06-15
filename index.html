@@ -1,9 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="ro">
   <head>
     <meta charset="utf-8" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="theme-color" content="#FAFAF7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#14151A" media="(prefers-color-scheme: dark)" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <link rel="manifest" href="/manifest.json" />
 
     <!-- Favicon -->
@@ -12,29 +13,34 @@
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
 
-    <!-- Google Font -->
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800;900&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
 
-    <title>ExamCrafter</title>
+    <title>ExamCrafter - pregatire pentru examene</title>
 
     <meta
       name="description"
-      content="ExamCrafter is a platform that helps you to prepare for your exams by providing you with the best study material and practice tests. It is a one-stop solution for all your exam needs"
+      content="ExamCrafter te ajuta sa exersezi pentru examene cu grile, seturi de intrebari personalizate si statistici detaliate de progres."
     />
-    <meta name="keywords" content="exam, grils" />
+    <meta name="keywords" content="grile, examene, teste, intrebari, pregatire examen, chestionare" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="ExamCrafter - pregatire pentru examene" />
+    <meta
+      property="og:description"
+      content="Exerseaza pentru examene cu grile, seturi personalizate si statistici de progres."
+    />
+    <meta property="og:image" content="/android-chrome-512x512.png" />
   </head>
 
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript>Trebuie sa activezi JavaScript pentru a folosi aceasta aplicatie.</noscript>
     <div id="root"></div>
     <script>
       const global = globalThis;

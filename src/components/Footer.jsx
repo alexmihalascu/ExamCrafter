@@ -1,105 +1,41 @@
-import { Box, Container, Link, Paper, Typography, useTheme } from '@mui/material';
-import { motion } from 'framer-motion';
+import { Box, Container, Link, Stack, Typography } from '@mui/material';
 
 const Footer = () => {
-  const theme = useTheme();
   const currentYear = new Date().getFullYear();
 
   return (
-    <Paper
-      component={motion.footer}
-      elevation={0}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+    <Box
+      component="footer"
       sx={{
         mt: 'auto',
-        backdropFilter: 'blur(10px)',
-        background: `linear-gradient(135deg,
-          ${theme.palette.primary.dark}15 0%,
-          ${theme.palette.primary.main}10 50%,
-          ${theme.palette.primary.light}05 100%)`,
-        borderTop: `1px solid ${theme.palette.primary.main}20`,
-        position: 'relative',
-        overflow: 'hidden',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: theme.palette.background.paper,
-          opacity: 0.8,
-          zIndex: 0,
-        },
+        borderTop: '1px solid',
+        borderColor: 'divider',
       }}
     >
       <Container maxWidth="lg">
-        <Box
-          sx={{
-            py: 3,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: 1,
-            position: 'relative',
-            zIndex: 1,
-          }}
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1}
+          sx={{ py: 3, alignItems: 'center', justifyContent: 'space-between' }}
         >
-          <Typography
-            component="div"
-            sx={{
-              color: theme.palette.text.primary,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              fontSize: '0.95rem',
-            }}
-          >
-            &copy; {currentYear} ExamCrafter
-            <Box component="span" sx={{ color: theme.palette.text.secondary }}>
-              |
-            </Box>
-            Aplicatie creata de
-            <motion.span whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link
-                href="https://mhlsq.ro"
-                target="_blank"
-                rel="noopener noreferrer"
-                sx={{
-                  color: theme.palette.primary.main,
-                  textDecoration: 'none',
-                  fontWeight: 600,
-                  position: 'relative',
-                  '&::after': {
-                    content: '""',
-                    position: 'absolute',
-                    width: '0',
-                    height: '2px',
-                    bottom: -2,
-                    left: 0,
-                    background: `linear-gradient(90deg,
-                      ${theme.palette.primary.main},
-                      ${theme.palette.primary.light})`,
-                    transition: 'width 0.3s ease',
-                  },
-                  '&:hover': {
-                    color: theme.palette.primary.light,
-                    '&::after': {
-                      width: '100%',
-                    },
-                  },
-                }}
-              >
-                MHLSQ Software
-              </Link>
-            </motion.span>
+          <Typography variant="body2" color="text.secondary">
+            © {currentYear} ExamCrafter
           </Typography>
-
-        </Box>
+          <Typography variant="body2" color="text.secondary">
+            Construit de{' '}
+            <Link
+              href="https://mhlsq.ro"
+              target="_blank"
+              rel="noopener noreferrer"
+              underline="hover"
+              sx={{ color: 'text.primary', fontWeight: 600 }}
+            >
+              MHLSQ Software
+            </Link>
+          </Typography>
+        </Stack>
       </Container>
-    </Paper>
+    </Box>
   );
 };
 

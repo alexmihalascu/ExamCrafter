@@ -123,7 +123,7 @@ const User = () => {
               )}
 
               <Grid container spacing={4}>
-                <Grid item xs={12} md={5}>
+                <Grid size={{ xs: 12, md: 5 }}>
                   <Paper
                     variant="outlined"
                     sx={{
@@ -167,7 +167,7 @@ const User = () => {
                   </Paper>
                 </Grid>
 
-                <Grid item xs={12} md={7}>
+                <Grid size={{ xs: 12, md: 7 }}>
                   <Paper
                     variant="outlined"
                     sx={{

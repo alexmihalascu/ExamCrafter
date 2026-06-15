@@ -9,36 +9,47 @@ export default defineConfig({
       manifest: {
         name: 'ExamCrafter',
         short_name: 'ExamCrafter',
-        description: 'An application to manage and take quizzes.',
-        theme_color: '#ffffff',
-        background_color: '#ffffff',
+        description: 'Pregatire pentru examene cu grile si seturi de intrebari personalizate.',
+        theme_color: '#14151A',
+        background_color: '#FAFAF7',
         display: 'standalone',
         start_url: '/',
         icons: [
           {
             src: '/android-chrome-192x192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
           },
           {
             src: '/android-chrome-512x512.png',
             sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
+            type: 'image/png',
+          },
+        ],
       },
       registerType: 'autoUpdate',
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,svg}']
-      }
-    })
+        globPatterns: ['**/*.{js,css,html,png,svg}'],
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+      },
+    }),
   ],
-  define: {
-    'process.env.VITE_SUPABASE_URL': JSON.stringify(process.env.VITE_SUPABASE_URL),
-    'process.env.VITE_SUPABASE_KEY': JSON.stringify(process.env.VITE_SUPABASE_KEY),
-    'process.env.VITE_CLERK_PUBLISHABLE_KEY': JSON.stringify(process.env.VITE_CLERK_PUBLISHABLE_KEY)
-  },
   build: {
     outDir: 'dist',
-  }
+    chunkSizeWarningLimit: 900,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (id.includes('firebase') || id.includes('@firebase')) return 'firebase';
+          if (id.includes('apexcharts')) return 'charts';
+          if (id.includes('@mui') || id.includes('@emotion')) return 'mui';
+          if (id.includes('framer-motion')) return 'motion';
+          if (id.includes('xlsx') || id.includes('papaparse')) return 'sheets';
+          if (id.includes('react')) return 'react';
+          return 'vendor';
+        },
+      },
+    },
+  },
 });

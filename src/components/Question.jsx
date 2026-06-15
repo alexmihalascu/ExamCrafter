@@ -104,14 +104,14 @@ const Question = ({ question, onAnswerChange, selectedAnswer, answerSubmitted })
   return (
     <Box mb={4}>
       <Typography
-        variant="h6"
+        variant="h5"
         gutterBottom
         sx={{
           fontWeight: 600,
           mb: 3,
-          background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-          backgroundClip: 'text',
-          color: 'transparent',
+          color: 'text.primary',
+          textAlign: 'left',
+          textWrap: 'balance',
         }}
       >
         {question.intrebare}

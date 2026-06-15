@@ -16,7 +16,7 @@ import {
   DialogTitle,
   Divider,
   FormControlLabel,
-  Grid,
+  GridLegacy as Grid,
   IconButton,
   MenuItem,
   Paper,
@@ -764,15 +764,16 @@ const handleFileImport = async (event) => {
   const renderSetCard = (set) => (
     <Grid item xs={12} md={6} key={set.id}>
       <Card
-        variant={selectedSet?.id === set.id ? 'outlined' : 'elevation'}
         sx={{
-          borderRadius: 3,
-          borderColor: selectedSet?.id === set.id ? theme.palette.primary.main : 'transparent',
+          height: '100%',
+          borderColor: selectedSet?.id === set.id ? 'primary.main' : 'divider',
+          bgcolor: selectedSet?.id === set.id ? `${theme.palette.primary.main}0A` : 'background.paper',
           cursor: 'pointer',
-          transition: 'all 0.2s ease',
+          transition: 'border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease',
           '&:hover': {
-            transform: 'translateY(-4px)',
-            boxShadow: theme.shadows[6],
+            transform: 'translateY(-3px)',
+            boxShadow: theme.shadows[3],
+            borderColor: 'primary.main',
           },
         }}
         onClick={() => handleSetSelection(set)}

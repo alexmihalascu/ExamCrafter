@@ -8,13 +8,11 @@ import {
   CircularProgress,
   Typography,
   Box,
-  Paper,
   Container,
   LinearProgress,
-  Grid,
+  Stack,
   Card,
   CardContent,
-  useMediaQuery,
 } from '@mui/material';
 import { CircularProgress as CircularTimer } from '@mui/material';
 import { motion } from 'framer-motion';
@@ -41,7 +39,6 @@ const Quiz = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [questionSets, setQuestionSets] = useState([]);
   const [setsLoading, setSetsLoading] = useState(true);
@@ -539,18 +536,7 @@ useEffect(() => {
   return (
     <Container maxWidth="md">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-        <Card
-          sx={{
-            p: theme.spacing(isMobile ? 2.5 : 5),
-            textAlign: 'center',
-            borderRadius: 5,
-            border: '1px solid rgba(255,255,255,0.12)',
-            background: theme.palette.mode === 'dark'
-              ? 'linear-gradient(145deg, rgba(10,12,26,0.95), rgba(8,10,23,0.9))'
-              : 'linear-gradient(145deg, rgba(255,255,255,0.92), rgba(234,240,255,0.9))',
-            boxShadow: '0 35px 75px rgba(3,4,12,0.55)',
-          }}
-        >
+        <Card sx={{ p: { xs: 2, sm: 4 }, textAlign: 'center' }}>
           <CardContent>
             <Typography
               variant="h4"
@@ -565,50 +551,32 @@ useEffect(() => {
               {accessLabel}
             </Typography>
 
-            <Grid container spacing={2} justifyContent="center" sx={{ mb: 4 }}>
-              <Grid item>
-                <Paper
+            <Stack direction="row" spacing={1.5} justifyContent="center" flexWrap="wrap" useFlexGap sx={{ mb: 4 }}>
+              {[
+                { label: 'Corecte', value: score, color: theme.palette.success.main },
+                { label: 'Gresite', value: incorrectAnswers, color: theme.palette.error.main },
+                { label: 'Ramase', value: questions.length - currentQuestionIndex - 1, color: theme.palette.text.secondary },
+              ].map((stat) => (
+                <Box
+                  key={stat.label}
                   sx={{
-                    p: 2.5,
-                    borderRadius: 4,
-                    background: 'rgba(50,215,75,0.12)',
-                    border: '1px solid rgba(50,215,75,0.3)',
+                    px: 2.5,
+                    py: 1.5,
+                    borderRadius: 3,
+                    minWidth: 96,
+                    border: '1px solid',
+                    borderColor: 'divider',
                   }}
                 >
-                  <Typography variant="body1" color="text.primary">
-                    Intrebari corecte: {score}
+                  <Typography className="tabular-nums" variant="h5" sx={{ color: stat.color, fontWeight: 600, lineHeight: 1 }}>
+                    {stat.value}
                   </Typography>
-                </Paper>
-              </Grid>
-              <Grid item>
-                <Paper
-                  sx={{
-                    p: 2.5,
-                    borderRadius: 4,
-                    background: 'rgba(255,69,58,0.12)',
-                    border: '1px solid rgba(255,69,58,0.3)',
-                  }}
-                >
-                  <Typography variant="body1" color="text.primary">
-                    Intrebari gresite: {incorrectAnswers}
+                  <Typography variant="caption" color="text.secondary">
+                    {stat.label}
                   </Typography>
-                </Paper>
-              </Grid>
-              <Grid item>
-                <Paper
-                  sx={{
-                    p: 2.5,
-                    borderRadius: 4,
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                  }}
-                >
-                  <Typography variant="body1">
-                    Intrebari ramase: {questions.length - currentQuestionIndex - 1}
-                  </Typography>
-                </Paper>
-              </Grid>
-            </Grid>
+                </Box>
+              ))}
+            </Stack>
 
             <Box mb={4}>
               <Typography variant="body2">
@@ -664,11 +632,7 @@ useEffect(() => {
                 <Button
                   variant="contained"
                   size="large"
-                  color="secondary"
-                  sx={{
-                    borderRadius: theme.shape.borderRadius,
-                    textTransform: 'none',
-                  }}
+                  color="primary"
                   onClick={handleNextQuestion}
                 >
                   {currentQuestionIndex < questions.length - 1 ? 'Intrebarea urmatoare' : 'Finalizeaza testul'}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container, Box, Paper, Typography, Grid, Card, CardContent,
+  Container, Box, Paper, Typography, GridLegacy as Grid, Card, CardContent,
   Dialog, DialogTitle, DialogContent, DialogActions, Button,
   CircularProgress, Alert, useTheme, Pagination, Select, MenuItem,
   IconButton, Tooltip, Stack, LinearProgress, Divider, Chip
@@ -72,19 +72,17 @@ const StatCard = ({ title, value, subtitle, color }) => {
       transition={{ duration: 0.2 }}
     >
       <Paper
-        elevation={0}
         sx={{
           p: 3,
-          height: '160px',
-          background: `linear-gradient(135deg, ${color}15, ${color}05)`,
-          border: `1px solid ${color}20`,
-          borderRadius: 2,
+          height: '100%',
+          minHeight: 150,
+          borderLeft: `3px solid ${color}`,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center'
         }}
       >
-        <Typography variant="h4" sx={{ color, fontWeight: 700, mb: 1 }}>
+        <Typography className="tabular-nums" variant="h4" sx={{ color, fontWeight: 600, mb: 1 }}>
           <CountUp 
             end={value} 
             duration={2} 
@@ -105,30 +103,12 @@ const StatCard = ({ title, value, subtitle, color }) => {
 };
 
 // Chart Card Component
-const ChartCard = ({ title, children }) => {
-  const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
-  const background = isDark
-    ? 'linear-gradient(135deg, rgba(9,12,26,0.95), rgba(5,9,20,0.9))'
-    : 'linear-gradient(135deg, rgba(255,255,255,0.98), rgba(244,247,255,0.95))';
-  const borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(19,24,45,0.08)';
-  return (
-    <Paper
-      elevation={0}
-      sx={{
-        p: 3,
-        height: '100%',
-        background,
-        border: `1px solid ${borderColor}`,
-        borderRadius: 2,
-        color: theme.palette.text.primary,
-      }}
-    >
-      <Typography variant="h6" gutterBottom>{title}</Typography>
-      {children}
-    </Paper>
-  );
-};
+const ChartCard = ({ title, children }) => (
+  <Paper sx={{ p: 3, height: '100%' }}>
+    <Typography variant="h6" gutterBottom>{title}</Typography>
+    {children}
+  </Paper>
+);
 
 const History = () => {
   const { currentUser } = useAuth();
@@ -280,18 +260,11 @@ const History = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <Typography 
-            variant="h3" 
-            gutterBottom
-            sx={{
-              fontWeight: 700,
-              background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-              backgroundClip: 'text',
-              textFillColor: 'transparent',
-              mb: 4
-            }}
-          >
-            Istoric Teste
+          <Typography variant="overline" color="primary.main">
+            Activitatea ta
+          </Typography>
+          <Typography variant="h2" gutterBottom sx={{ mb: 4, mt: 0.5 }}>
+            Istoric teste
           </Typography>
 
           <Grid container spacing={3} sx={{ mb: 6 }}>
@@ -516,18 +489,7 @@ const History = () => {
   onClose={() => setSelectedEntry(null)}
   maxWidth="md"
   fullWidth
-  PaperProps={{
-    elevation: 0,
-    sx: { 
-      borderRadius: 3,
-      border: `1px solid ${theme.palette.divider}`,
-      background: theme.palette.mode === 'dark'
-        ? 'linear-gradient(135deg, rgba(7,11,24,0.95), rgba(13,18,34,0.92))'
-        : 'linear-gradient(135deg, rgba(255,255,255,0.98), rgba(247,249,255,0.94))',
-      color: theme.palette.text.primary,
-      backdropFilter: 'blur(20px)'
-    }
-  }}
+  PaperProps={{ sx: { border: `1px solid ${theme.palette.divider}` } }}
 >
   <DialogTitle>
     <Stack direction="row" alignItems="center" spacing={2}>

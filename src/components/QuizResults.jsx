@@ -94,17 +94,7 @@ const QuizResults = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <Paper
-            elevation={0}
-            sx={{
-              p: 4,
-              borderRadius: 2,
-              background: `linear-gradient(135deg,
-                ${theme.palette.background.paper} 0%,
-                ${theme.palette.background.default} 100%)`,
-              border: `1px solid ${theme.palette.divider}`,
-            }}
-          >
+          <Paper sx={{ p: { xs: 3, md: 4 } }}>
             <Stack spacing={4} alignItems="center">
               <Icon
                 icon={passed ? 'mdi:trophy' : 'mdi:alert-circle'}
@@ -117,41 +107,25 @@ const QuizResults = ({
                 {passed ? 'Felicitări!' : 'Mai încearcă!'}
               </Typography>
 
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 3,
-                      textAlign: 'center',
-                      border: `1px solid ${theme.palette.divider}`,
-                      borderRadius: 2,
-                    }}
-                  >
-                    <Typography variant="h3" color="primary.main">
+              <Grid container spacing={2} sx={{ width: '100%' }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Paper variant="outlined" sx={{ p: 3, textAlign: 'center' }}>
+                    <Typography className="tabular-nums" variant="h3" color="success.main">
                       <CountUp end={score} duration={2} />
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Răspunsuri corecte
+                      Raspunsuri corecte
                     </Typography>
                   </Paper>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 3,
-                      textAlign: 'center',
-                      border: `1px solid ${theme.palette.divider}`,
-                      borderRadius: 2,
-                    }}
-                  >
-                    <Typography variant="h3" color="error.main">
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Paper variant="outlined" sx={{ p: 3, textAlign: 'center' }}>
+                    <Typography className="tabular-nums" variant="h3" color="error.main">
                       <CountUp end={incorrectAnswers} duration={2} />
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Răspunsuri greșite
+                      Raspunsuri gresite
                     </Typography>
                   </Paper>
                 </Grid>

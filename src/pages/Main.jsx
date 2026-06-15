@@ -1,19 +1,7 @@
 import { Icon } from '@iconify/react';
-import {
-  Avatar,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Container,
-  Grid,
-  Paper,
-  Typography,
-  useTheme,
-} from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { Avatar, Box, Button, Container, Grid, Paper, Stack, Typography } from '@mui/material';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import CountUp from 'react-countup';
 import { useNavigate } from 'react-router-dom';
@@ -21,274 +9,160 @@ import Footer from '../components/Footer';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/firebaseConfig';
 
-const FeatureCard = ({ icon, title, description, delay }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const theme = useTheme();
+const features = [
+  {
+    icon: 'ph:database',
+    title: 'Seturi de grile',
+    description: 'Intrebarile tale sunt stocate in cloud si organizate pe seturi si grile compuse.',
+  },
+  {
+    icon: 'ph:chart-line-up',
+    title: 'Analiza progresului',
+    description: 'Vezi rata de promovare, media raspunsurilor corecte si evolutia in timp.',
+  },
+  {
+    icon: 'ph:lock-key',
+    title: 'Date private',
+    description: 'Rezultatele raman legate de contul tau si nu sunt partajate fara permisiune.',
+  },
+];
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 50 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay }}
-      whileHover={{ scale: 1.02 }}
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
+const Stat = ({ value, label }) => (
+  <Box>
+    <Typography
+      className="tabular-nums"
+      sx={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '2.5rem', fontWeight: 600, lineHeight: 1, letterSpacing: '-0.02em' }}
     >
-      <Card
-        sx={{
-          height: '100%',
-          background:
-            theme.palette.mode === 'dark'
-              ? 'linear-gradient(140deg, rgba(16,18,38,0.92), rgba(8,10,24,0.88))'
-              : 'linear-gradient(140deg, rgba(255,255,255,0.9), rgba(230,236,255,0.85))',
-          borderRadius: 4,
-          border: '1px solid rgba(255,255,255,0.08)',
-          boxShadow: '0 25px 45px rgba(0,0,0,0.35)',
-          transition: 'all 0.3s ease-in-out',
-          backdropFilter: 'blur(22px)',
-          '&:hover': {
-            transform: 'translateY(-6px)',
-            boxShadow: '0 35px 65px rgba(0,0,0,0.45)',
-          },
-        }}
-      >
-        <CardContent sx={{ p: 4, textAlign: 'center' }}>
-          <motion.div
-            animate={{
-              y: isHovered ? -5 : 0,
-              color: isHovered ? theme.palette.primary.main : theme.palette.text.secondary,
-            }}
-            transition={{ duration: 0.2 }}
-          >
-            <Icon icon={icon} width={48} height={48} />
-          </motion.div>
-          <Typography variant="h6" sx={{ mt: 3, mb: 2, fontWeight: 600 }}>
-            {title}
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-            {description}
-          </Typography>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-};
+      <CountUp end={value} duration={1.6} />
+    </Typography>
+    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
+      {label}
+    </Typography>
+  </Box>
+);
 
 const Main = () => {
   const { currentUser } = useAuth();
-  const theme = useTheme();
   const navigate = useNavigate();
   const [testStats, setTestStats] = useState({ totalTests: 0, passedTests: 0 });
-  const isDark = theme.palette.mode === 'dark';
-  const heroTextColor = isDark ? '#FFFFFF' : theme.palette.text.primary;
-  const heroSubtextColor = isDark ? 'rgba(255,255,255,0.85)' : theme.palette.text.secondary;
-  const metricBackground = isDark ? 'rgba(255,255,255,0.08)' : alpha(theme.palette.primary.main, 0.08);
-  const metricBorder = isDark ? 'rgba(255,255,255,0.08)' : alpha(theme.palette.primary.main, 0.25);
 
   useEffect(() => {
     const fetchTestStats = async () => {
-      if (currentUser?.uid) {
-        try {
-          const resultsRef = collection(db, 'results');
-          const q = query(resultsRef, where('user_id', '==', currentUser.uid));
-          const querySnapshot = await getDocs(q);
-
-          const data = querySnapshot.docs.map(doc => doc.data());
-          const passedTests = data.filter(test => test.passed).length;
-
-          setTestStats({
-            totalTests: data.length,
-            passedTests,
-          });
-        } catch (error) {
-          console.error('Error fetching test stats:', error);
-        }
+      if (!currentUser?.uid) return;
+      try {
+        const resultsRef = collection(db, 'results');
+        const q = query(resultsRef, where('user_id', '==', currentUser.uid));
+        const snapshot = await getDocs(q);
+        const data = snapshot.docs.map((doc) => doc.data());
+        setTestStats({
+          totalTests: data.length,
+          passedTests: data.filter((test) => test.passed).length,
+        });
+      } catch (error) {
+        console.error('Error fetching test stats:', error);
       }
     };
-
     fetchTestStats();
   }, [currentUser]);
 
-  const features = [
-    {
-      icon: 'mdi:database',
-      title: 'Sistem de Grile',
-      description: 'Bază de date cloud pentru stocarea și gestionarea întrebărilor',
-    },
-    {
-      icon: 'mdi:chart-line',
-      title: 'Analiză Performanță',
-      description: 'Monitorizează progresul și rezultatele testelor cu statistici detaliate',
-    },
-    {
-      icon: 'mdi:shield-check',
-      title: 'Date Anonime',
-      description: 'Securitate maximă - datele sunt stocate anonim pentru confidențialitatea ta',
-    },
-  ];
+  const firstName = currentUser?.displayName?.split(' ')[0] || 'Explorator';
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: 'transparent',
-      }}
-    >
-      <Container maxWidth="lg" sx={{ flex: 1, py: 6 }}>
-        <AnimatePresence>
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <Paper
-              elevation={0}
-              sx={{
-                position: 'relative',
-                overflow: 'hidden',
-                p: { xs: 4, md: 6 },
-                borderRadius: 5,
-                border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(18,21,44,0.12)'}`,
-                boxShadow: isDark ? '0 40px 90px rgba(3,4,12,0.55)' : '0 35px 70px rgba(10,14,35,0.1)',
-                background:
-                  theme.palette.mode === 'dark'
-                    ? 'linear-gradient(135deg, rgba(7,10,22,0.95), rgba(16,19,40,0.9))'
-                    : 'linear-gradient(135deg, rgba(255,255,255,0.93), rgba(229,235,255,0.9))',
-              }}
-            >
-              <Box
-                sx={{
-                  position: 'absolute',
-                  inset: 0,
-                  opacity: 0.6,
-                  background:
-                    'radial-gradient(circle at 25% 15%, rgba(120,140,255,0.55), transparent 55%)',
-                }}
-              />
-
-              {currentUser && (
-                <Box sx={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
-                  <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: 'spring', stiffness: 260, damping: 18 }}
-                  >
-                    <Avatar
-                      src={currentUser.photoURL}
-                      alt={currentUser.displayName}
-                      sx={{
-                        width: 120,
-                        height: 120,
-                        margin: '0 auto',
-                        mb: 3,
-                        border: isDark ? '4px solid rgba(255,255,255,0.3)' : '4px solid rgba(255,255,255,0.8)',
-                        boxShadow: '0 30px 50px rgba(0,0,0,0.25)',
-                      }}
-                    />
-                  </motion.div>
-
-                  <Typography variant="h3" fontWeight="bold" sx={{ color: heroTextColor }} gutterBottom>
-                    Buna, {currentUser.displayName?.split(' ')[0] || 'Explorator'}!
+    <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+      <Container maxWidth="lg" sx={{ flex: 1 }}>
+        <Box
+          component={motion.div}
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Typography variant="overline" color="primary.main">
+            Panou principal
+          </Typography>
+          <Grid container spacing={4} sx={{ mt: 0.5, mb: { xs: 6, md: 9 } }} alignItems="center">
+            <Grid size={{ xs: 12, md: 7 }}>
+              <Stack direction="row" spacing={2.5} alignItems="center" sx={{ mb: 3 }}>
+                <Avatar
+                  src={currentUser?.photoURL || undefined}
+                  alt={currentUser?.displayName || ''}
+                  sx={{ width: 64, height: 64, borderRadius: 3 }}
+                  variant="rounded"
+                >
+                  {firstName[0]}
+                </Avatar>
+                <Box>
+                  <Typography variant="h2" sx={{ mb: 0.5 }}>
+                    Buna, {firstName}
                   </Typography>
-                  <Typography variant="h6" sx={{ color: heroSubtextColor, mb: 4 }}>
-                    Esti in controlul dataset-urilor tale inteligente.
+                  <Typography variant="body1" color="text.secondary">
+                    Alege un set, da-i drumul la grile si urmareste-ti progresul.
                   </Typography>
-
-                  <Grid container spacing={3} justifyContent="center">
-                    <Grid item xs={12} sm={6}>
-                      <Box
-                        sx={{
-                          p: 3,
-                          borderRadius: 4,
-                          background: metricBackground,
-                          border: `1px solid ${metricBorder}`,
-                        }}
-                      >
-                        <Typography variant="h4" fontWeight="bold" sx={{ color: heroTextColor }}>
-                          <CountUp end={testStats.totalTests} duration={2} />
-                        </Typography>
-                        <Typography sx={{ color: heroSubtextColor }}>Teste efectuate</Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <Box
-                        sx={{
-                          p: 3,
-                          borderRadius: 4,
-                          background: metricBackground,
-                          border: `1px solid ${metricBorder}`,
-                        }}
-                      >
-                        <Typography variant="h4" fontWeight="bold" sx={{ color: heroTextColor }}>
-                          <CountUp end={testStats.passedTests} duration={2} />
-                        </Typography>
-                        <Typography sx={{ color: heroSubtextColor }}>Teste promovate</Typography>
-                      </Box>
-                    </Grid>
-                  </Grid>
-
-                  <Box mt={5}>
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
-                      <Button
-                        variant="contained"
-                        size="large"
-                        onClick={() => navigate('/quiz')}
-                        sx={{ px: 5, py: 1.6, fontSize: 18 }}
-                      >
-                        Incepe un Test
-                      </Button>
-                    </motion.div>
-                  </Box>
                 </Box>
-              )}
-            </Paper>{' '}
-          </motion.div>
-        </AnimatePresence>
-
-        <Box sx={{ mt: 8, mb: 6 }}>
-          <Typography
-            variant="h4"
-            align="center"
-            sx={{
-              fontWeight: 'bold',
-              letterSpacing: '0.04em',
-              textTransform: 'uppercase',
-              background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-              backgroundClip: 'text',
-              color: 'transparent',
-              mb: 2,
-            }}
-          >
-            Functionalitati
-          </Typography>
-          <Typography
-            variant="body1"
-            align="center"
-            sx={{
-              color: theme.palette.text.secondary,
-              maxWidth: '600px',
-              mx: 'auto',
-              mb: 6,
-            }}
-          >
-            Descoperă instrumentele care te ajută să excelezi
-          </Typography>
-        </Box>
-
-        <Grid container spacing={4}>
-          {features.map((feature, index) => (
-            <Grid item xs={12} md={4} key={feature.title}>
-              <FeatureCard
-                icon={feature.icon}
-                title={feature.title}
-                description={feature.description}
-                delay={0.2 * (index + 1)}
-              />
+              </Stack>
+              <Stack direction="row" spacing={2}>
+                <Button variant="contained" size="large" onClick={() => navigate('/quiz')} startIcon={<Icon icon="ph:play" />}>
+                  Incepe un test
+                </Button>
+                <Button variant="outlined" size="large" onClick={() => navigate('/sets')}>
+                  Gestioneaza seturi
+                </Button>
+              </Stack>
             </Grid>
-          ))}
-        </Grid>
+            <Grid size={{ xs: 12, md: 5 }}>
+              <Paper sx={{ p: 4 }}>
+                <Stack direction="row" spacing={5}>
+                  <Stat value={testStats.totalTests} label="Teste efectuate" />
+                  <Box sx={{ width: '1px', alignSelf: 'stretch', bgcolor: 'divider' }} />
+                  <Stat value={testStats.passedTests} label="Teste promovate" />
+                </Stack>
+              </Paper>
+            </Grid>
+          </Grid>
+
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="h4" sx={{ mb: 1 }}>
+              Ce poti face aici
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '52ch' }}>
+              Cateva dintre lucrurile pe care platforma le face in fundal pentru tine.
+            </Typography>
+          </Box>
+
+          <Grid container spacing={3} sx={{ mb: 8 }}>
+            {features.map((feature, index) => (
+              <Grid size={{ xs: 12, md: 4 }} key={feature.title}>
+                <Paper
+                  component={motion.div}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.1 * index }}
+                  sx={{ p: 3.5, height: '100%' }}
+                >
+                  <Box
+                    sx={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 2.5,
+                      display: 'grid',
+                      placeItems: 'center',
+                      color: 'primary.main',
+                      bgcolor: (t) => `${t.palette.primary.main}14`,
+                      mb: 2,
+                    }}
+                  >
+                    <Icon icon={feature.icon} width={24} />
+                  </Box>
+                  <Typography variant="h6" sx={{ mb: 1 }}>
+                    {feature.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {feature.description}
+                  </Typography>
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
       </Container>
       <Footer />
     </Box>
