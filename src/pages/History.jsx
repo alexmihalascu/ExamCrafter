@@ -8,9 +8,12 @@ import {
 import { alpha } from '@mui/material/styles';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Icon } from '@iconify/react';
-import Chart from 'react-apexcharts';
-import CountUp from 'react-countup';
+import * as chartExports from 'react-apexcharts';
+import * as countUpExports from 'react-countup';
 import { useAuth } from '../contexts/AuthContext';
+
+const Chart = chartExports.default?.default || chartExports.default || chartExports;
+const CountUp = countUpExports.default?.default || countUpExports.default || countUpExports;
 import { db } from '../firebase/firebaseConfig';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 

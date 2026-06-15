@@ -3,11 +3,13 @@ import { Avatar, Box, Button, Container, Grid, Paper, Stack, Typography } from '
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import CountUp from 'react-countup';
+import * as countUpExports from 'react-countup';
 import { useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase/firebaseConfig';
+
+const CountUp = countUpExports.default?.default || countUpExports.default || countUpExports;
 
 const features = [
   {

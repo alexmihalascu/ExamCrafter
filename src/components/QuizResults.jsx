@@ -10,9 +10,12 @@ import {
 } from '@mui/material';
 import { Icon } from '@iconify/react';
 import { motion } from 'framer-motion';
-import Chart from 'react-apexcharts';
-import CountUp from 'react-countup';
+import * as chartExports from 'react-apexcharts';
+import * as countUpExports from 'react-countup';
 import { useTheme } from '@mui/material/styles';
+
+const Chart = chartExports.default?.default || chartExports.default || chartExports;
+const CountUp = countUpExports.default?.default || countUpExports.default || countUpExports;
 
 const accessMap = {
   owned: 'Set personal',
